@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>數珠念佛全球時間軸 · Prayer Beads Historical Globe</title>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson@3"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0e1a;
+    color: #e8dcc8;
+    font-family: 'Noto Serif TC', 'Noto Serif', 'Georgia', serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #header {
+    text-align: center;
+    padding: 12px 20px 8px;
+    background: linear-gradient(180deg, #0d1226 0%, transparent 100%);
+    position: relative;
+    z-index: 10;
+    flex-shrink: 0;
+  }
+  #header h1 {
+    font-size: 1.4rem;
+    letter-spacing: 0.15em;
+    color: #f5e8c0;
+    text-shadow: 0 0 20px rgba(200,160,80,0.6);
+  }
+  #header p {
+    font-size: 0.72rem;
+    color: #9a8a6a;
+    margin-top: 3px;
+    letter-spacing: 0.08em;
+  }
+
+  #main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #globe-container {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #globe-container svg {
+    cursor: grab;
+  }
+  #globe-container svg:active {
+    cursor: grabbing;
+  }
+
+  /* Info panel */
+  #info-panel {
+    width: 300px;
+    min-width: 300px;
+    background: rgba(10,14,26,0.92);
+    border-left: 1px solid rgba(160,120,60,0.3);
+    padding: 20px 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: opacity 0.3s;
+  }
+
+  #info-panel .placeholder {
+    color: #5a4e38;
+    font-size: 0.8rem;
+    text-align: center;
+    margin-top: 40px;
+    line-height: 1.8;
+  }
+
+  .event-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(160,120,60,0.25);
+    border-radius: 6px;
+    padding: 14px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .event-card:hover, .event-card.active {
+    background: rgba(200,160,60,0.12);
+    border-color: rgba(200,160,60,0.5);
+  }
+  .event-card .year-tag {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: #c8a03c;
+    margin-bottom: 4px;
+  }
+  .event-card .title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #f0e0b0;
+    line-height: 1.4;
+    margin-bottom: 6px;
+  }
+  .event-card .desc {
+    font-size: 0.75rem;
+    color: #9a8a6a;
+    line-height: 1.7;
+  }
+  .event-card .source {
+    font-size: 0.65rem;
+    color: #6a5a3a;
+    margin-top: 8px;
+    font-style: italic;
+    border-top: 1px solid rgba(160,120,60,0.15);
+    padding-top: 6px;
+  }
+  .religion-badge {
+    display: inline-block;
+    font-size: 0.6rem;
+    padding: 2px 7px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Legend */
+  #legend {
+    padding: 8px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    background: rgba(10,14,26,0.8);
+    border-top: 1px solid rgba(160,120,60,0.15);
+    flex-shrink: 0;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    color: #9a8a6a;
+    cursor: pointer;
+    transition: color 0.2s;
+    user-select: none;
+  }
+  .legend-item:hover { color: #e8dcc8; }
+  .legend-item.dimmed { opacity: 0.35; }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* Timeline */
+  #timeline-bar {
+    padding: 10px 24px 14px;
+    background: rgba(10,14,26,0.9);
+    border-top: 1px solid rgba(160,120,60,0.15);
+    flex-shrink: 0;
+  }
+  #timeline-bar .year-display {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #c8a03c;
+    margin-bottom: 6px;
+    letter-spacing: 0.1em;
+  }
+  #timeline-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 3px;
+    border-radius: 2px;
+    outline: none;
+    background: linear-gradient(90deg, #c8a03c var(--pct, 50%), #2a2418 var(--pct, 50%));
+    cursor: pointer;
+  }
+  #timeline-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #c8a03c;
+    box-shadow: 0 0 8px rgba(200,160,60,0.7);
+    cursor: pointer;
+  }
+  #timeline-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #c8a03c;
+    border: none;
+    cursor: pointer;
+  }
+  .timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.62rem;
+    color: #5a4e38;
+    margin-top: 5px;
+  }
+
+  /* Tooltip */
+  #tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(10,14,26,0.95);
+    border: 1px solid rgba(200,160,60,0.4);
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    color: #f0e0b0;
+    max-width: 220px;
+    z-index: 100;
+    display: none;
+    line-height: 1.5;
+  }
+
+  /* Pulse animation on dots */
+  @keyframes pulse {
+    0% { r: 5; opacity: 0.9; }
+    50% { r: 8; opacity: 0.5; }
+    100% { r: 5; opacity: 0.9; }
+  }
+
+  /* Scrollbar */
+  #info-panel::-webkit-scrollbar { width: 4px; }
+  #info-panel::-webkit-scrollbar-track { background: transparent; }
+  #info-panel::-webkit-scrollbar-thumb { background: rgba(160,120,60,0.3); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>數珠念佛歷史地球儀</h1>
+  <p>Prayer Beads Across Traditions · 比較宗教念珠記載時間軸</p>
+</div>
+
+<div id="main">
+  <div id="globe-container">
+    <svg id="globe"></svg>
+  </div>
+  <div id="info-panel">
+    <div class="placeholder">
+      ← 點擊地球儀上的光點<br>查看歷史記載<br><br>
+      拖曳可旋轉地球<br>滾輪可縮放<br><br>
+      下方時間軸可篩選年代
+    </div>
+  </div>
+</div>
+
+<div id="legend"></div>
+
+<div id="timeline-bar">
+  <div class="year-display" id="year-display">顯示所有年代</div>
+  <input type="range" id="timeline-slider" min="-700" max="1900" value="1900" step="50">
+  <div class="timeline-labels">
+    <span>西元前 700 年</span>
+    <span>西元元年</span>
+    <span>西元 900 年</span>
+    <span>西元 1900 年</span>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+// ─── Data ───────────────────────────────────────────────────────────────────
+const RELIGIONS = {
+  "佛教": { color: "#e6a020", label: "佛教 Buddhism" },
+  "印度教": { color: "#e05050", label: "印度教 Hinduism" },
+  "基督教": { color: "#5080e0", label: "基督教 Christianity" },
+  "伊斯蘭教": { color: "#20b080", label: "伊斯蘭教 Islam" },
+  "耆那教": { color: "#a060c0", label: "耆那教 Jainism" }
+};
+
+const EVENTS = [
+  {
+    id: 1,
+    year: -2600,
+    title: "古印度河流域：最早串珠考古遺存",
+    religion: "印度教",
+    coords: [23.0, 68.0],
+    desc: "哈拉帕（Harappan）文化遺址（約西元前2600–1900年）出土大量串珠，材質包括紅玉髓、貝殼、黃金等，為南亞串珠宗教用途的最早物質證據，但其祈禱計數用途尚待考證。",
+    source: "Archaeological Survey of India; Kenoyer, J.M., Ancient Cities of the Indus Valley Civilization (1998)"
+  },
+  {
+    id: 2,
+    year: -800,
+    title: "古印度：吠陀傳統念珠（Japa Mala）",
+    religion: "印度教",
+    coords: [25.3, 83.0],
+    desc: "印度教傳統中使用菩提子（Rudraksha）或圖爾西木（Tulasi）製成念珠，稱為「Japa Mala」（持誦花環），用於持誦曼陀羅（mantra）計數。吠陀文獻中已有諸神持念珠的描述。",
+    source: "Shiva Purana; Vedic iconographic tradition"
+  },
+  {
+    id: 3,
+    year: -500,
+    title: "古印度：耆那教念珠",
+    religion: "耆那教",
+    coords: [23.0, 72.5],
+    desc: "耆那教使用念珠（Navkar Mantra mala）持誦「南無阿羅漢」等五禮拜文（Navkar Mantra），通常108顆，材質為珊瑚、水晶或菩提子。耆那教強調念珠為禪定工具而非裝飾。",
+    source: "Jain canonical texts (Agamas)"
+  },
+  {
+    id: 4,
+    year: -200,
+    title: "北印度：《木槵子經》故事原型地",
+    religion: "佛教",
+    coords: [27.5, 82.5],
+    desc: "據《木槵子經》（漢譯本）記載，佛陀在舍衛城（Shravasti，今印度北方邦）教導憍薩羅國波流離王，以108顆木槵子（無患子）串成念珠，稱念「南無佛陀、達摩、僧伽」，可消除業障、得大果報。此為佛教念珠法門最著名的文獻起源。",
+    source: "《佛說木槵子經》，《大正藏》No. 786；疑為中國撰述，約3–5世紀"
+  },
+  {
+    id: 5,
+    year: 310,
+    title: "埃及：沙漠教父的計數祈禱",
+    religion: "基督教",
+    coords: [26.8, 31.2],
+    desc: "埃及沙漠教父（Desert Fathers）如帕科謬斯（Pachomius，292–348年）使用打結羊毛繩索或小石頭計算禱告次數（每日300次以上的「天主聖父」禱文），是基督教念珠的最早歷史形態，為後世玫瑰經念珠的前身。",
+    source: "Palladius, Lausiac History (419 CE); Cassian, Institutes (c.420 CE)"
+  },
+  {
+    id: 6,
+    year: 400,
+    title: "中國南朝：《木槵子經》漢譯流傳",
+    religion: "佛教",
+    coords: [32.1, 118.8],
+    desc: "《木槵子經》在中國翻譯流傳（譯者不詳，疑為南朝或更早），確立了佛教念珠108顆的標準及念佛法門。此後念珠在中國佛教中廣泛使用，成為念佛修行的重要輔具。",
+    source: "《佛說木槵子經》，《大正藏》No. 786；朱謙之等學者考證"
+  },
+  {
+    id: 7,
+    year: 600,
+    title: "中國隋唐：念珠念佛普及",
+    religion: "佛教",
+    coords: [34.3, 108.9],
+    desc: "隋唐時期，淨土宗興起，善導大師（613–681年）大力倡導念佛往生西方，念珠成為計數念佛的必備道具。道宣律師《感通錄》亦記載天人攜來佛陀頂骨念珠等傳說，反映念珠的神聖地位。",
+    source: "善導大師《觀無量壽經疏》；道宣《感通錄》"
+  },
+  {
+    id: 8,
+    year: 650,
+    title: "阿拉伯半島：伊斯蘭念珠（Misbaha）",
+    religion: "伊斯蘭教",
+    coords: [21.4, 39.8],
+    desc: "伊斯蘭念珠（阿拉伯語：Misbaha，又稱Subha或Tasbih）共99顆，代表真主的99個尊名，用於唸誦「سبحان الله」（讚主聖）、「الحمد لله」（讚美真主）、「الله أكبر」（真主至大）各33遍。起源有說受佛教或基督教念珠影響。",
+    source: "Hadith literature; al-Ghazali, Ihya Ulum al-Din (c.1095)"
+  },
+  {
+    id: 9,
+    year: 750,
+    title: "唐代長安：不空三藏譯念珠儀軌",
+    religion: "佛教",
+    coords: [34.3, 108.9],
+    desc: "密宗高僧不空（Amoghavajra，705–774年）翻譯《金剛頂瑜伽念珠經》等多部儀軌，詳述念珠材質（菩提子、蓮子、水晶、琥珀等）、顆數（1080、108、54、27、18顆）及持誦方法。此為中國最完整的念珠儀軌文獻之一。",
+    source: "《金剛頂瑜伽念珠經》，《大正藏》No. 789；不空大師譯"
+  },
+  {
+    id: 10,
+    year: 756,
+    title: "日本奈良：正倉院藏念珠",
+    religion: "佛教",
+    coords: [34.7, 135.8],
+    desc: "日本奈良正倉院保存有天平時代（8世紀中期）的念珠實物，為日本現存最古老的念珠。佛教隨遣唐使從中國傳入日本，念珠（日語：数珠 juzu）成為重要的宗教器物。光明皇后捐贈聖武天皇遺物中可能包含念珠。",
+    source: "正倉院宝物目録；奈良時代の仏教文化"
+  },
+  {
+    id: 11,
+    year: 762,
+    title: "西藏拉薩：藏傳佛教念珠傳統",
+    religion: "佛教",
+    coords: [29.6, 91.1],
+    desc: "蓮花生大士（Padmasambhava）於8世紀後半傳入密法於西藏，藏傳佛教的念珠（梵語：Mālā，藏語：Threngwa）傳統確立。108顆為標準，常用菩提子、骨珠（象徵無常）、珊瑚等，用於持誦真言如「唵嘛呢叭咪吽」。",
+    source: "Nyingma tradition; Padmasambhava biography (Terma literature)"
+  },
+  {
+    id: 12,
+    year: 1057,
+    title: "英國考文垂：哥迪瓦夫人的念珠",
+    religion: "基督教",
+    coords: [52.4, -1.5],
+    desc: "英國哥迪瓦夫人（Lady Godiva，卒約1067年）在遺囑中記載將一串用寶石串成的「念珠」（paternoster，即天主聖父念珠）懸掛在聖母像頸上。此為英國文獻中最早有記載的念珠之一，反映中世紀歐洲念珠的貴族使用。",
+    source: "Roger of Wendover, Flores Historiarum (13th century)"
+  },
+  {
+    id: 13,
+    year: 1090,
+    title: "拜占庭帝國：東正教祈禱繩（Komboskini）",
+    religion: "基督教",
+    coords: [40.6, 22.9],
+    desc: "東正教的祈禱繩（希臘語：Komboskini，斯拉夫語：Chotki）傳統與阿托斯山（Mount Athos）修道院密切相關，據傳由聖安東尼制定。由羊毛打結而成，通常33或100個結，用於持誦耶穌禱文（Jesus Prayer）：「主耶穌基督，神之子，憐憫我這罪人。」",
+    source: "Hesychast tradition; Mount Athos monastic practice"
+  },
+  {
+    id: 14,
+    year: 1175,
+    title: "朝鮮半島：高麗時代念珠文化",
+    religion: "佛教",
+    coords: [37.6, 126.9],
+    desc: "高麗時代（918–1392年）佛教興盛，念珠（韓語：염주 念珠）廣泛使用。高麗製作的念珠以精緻工藝著稱，國立中央博物館等機構收藏多件高麗時代念珠文物。義天大師（1055–1101年）對念珠念佛的推廣有重要貢獻。",
+    source: "韓國國立中央博物館；《三國遺事》；高麗大藏經相關記載"
+  },
+  {
+    id: 15,
+    year: 1208,
+    title: "法國土魯斯：聖道明與玫瑰經",
+    religion: "基督教",
+    coords: [43.6, 1.4],
+    desc: "聖道明（St. Dominic，1170–1221年）據傳在法國對抗阿爾比派異端期間，由聖母顯現賜予玫瑰經念珠（Rosary）。雖然歷史學家對此傳說持保留態度，但道明會（Dominican Order）對玫瑰經的系統化推廣影響深遠，使玫瑰經成為天主教最重要的祈禱形式之一。",
+    source: "Alanus de Rupe (15th c.); Dominican Order records; Anne Winston-Allen, Stories of the Rose (1997)"
+  },
+  {
+    id: 16,
+    year: 1200,
+    title: "中國宋代：禪淨合流與念珠",
+    religion: "佛教",
+    coords: [30.3, 120.2],
+    desc: "宋代禪宗與淨土宗合流，念珠廣泛流行於僧俗兩界。文人蘇軾（1037–1101年）詩文中有念珠記載；志磐《佛祖統紀》詳載念佛法門。念珠材質多樣，以沉香、菩提子、水晶為貴，朝廷賞賜念珠亦有記載。",
+    source: "志磐《佛祖統紀》；蘇軾詩文；《宋史》相關記載"
+  },
+  {
+    id: 17,
+    year: 1389,
+    title: "中亞波斯：伊斯蘭念珠製作工藝",
+    religion: "伊斯蘭教",
+    coords: [35.7, 51.4],
+    desc: "中世紀伊斯蘭世界，念珠（Misbaha）製作成為重要工藝，以龍涎香、珊瑚、瑪瑙、象牙等名貴材質製作，波斯、土耳其均有高品質念珠工匠。奧斯曼帝國蘇丹賞賜念珠的記載反映其貴族文化地位。",
+    source: "Otto Spies, 'Zur Geschichte des Rosenkranzes' (1951); Venetia Porter, The Art of Hajj (2012)"
+  },
+  {
+    id: 18,
+    year: 1470,
+    title: "羅馬：玫瑰經念珠標準化",
+    religion: "基督教",
+    coords: [41.9, 12.5],
+    desc: "1470年教宗思道四世（Pope Sixtus IV）批准道明會玫瑰經兄弟會（Confraternity of the Rosary），玫瑰經的形式逐步標準化：5組神秘（Mystery），每組1顆大珠（Our Father）＋10顆小珠（Hail Mary）＝共50顆，加上信經等共59顆。16世紀進一步發展為150顆。",
+    source: "Papal Bull of Sixtus IV (1479); Ludwig Andreas Veit, Volksfrommes Brauchtum (1936)"
+  },
+  {
+    id: 19,
+    year: 1580,
+    title: "中國明代：念珠文化鼎盛",
+    religion: "佛教",
+    coords: [32.1, 118.8],
+    desc: "明代佛教復興，念珠文化達到鼎盛。雲棲祩宏（蓮池大師，1535–1615年）著《竹窗隨筆》論念珠，倡導以念珠計數念佛。皇室貴族以珍稀材料（珊瑚、蜜蠟、琥珀）製作念珠，宮廷念珠工藝極為精湛，現故宮博物院有豐富藏品。",
+    source: "蓮池大師《竹窗隨筆》；故宮博物院藏品目錄；《明實錄》相關記載"
+  },
+  {
+    id: 20,
+    year: 1603,
+    title: "日本江戶：各宗派念珠多樣化",
+    religion: "佛教",
+    coords: [35.7, 139.7],
+    desc: "江戶時代（1603–1868年）日本各佛教宗派形成獨特念珠規格：真言宗使用108顆大型二輪念珠；淨土真宗（本願寺）使用門徒念珠；日蓮宗念珠具有獨特的106顆設計；臨濟宗禪師手持18顆小念珠。念珠製作成為京都、奈良的重要傳統工藝。",
+    source: "各宗派宗規；京都の数珠工芸史；竹内道敬《数珠の歴史》"
+  },
+  {
+    id: 21,
+    year: 1845,
+    title: "歐洲：玫瑰經念珠的現代推廣",
+    religion: "基督教",
+    coords: [48.9, 2.3],
+    desc: "19世紀天主教復興（Ultramontanism）運動推動玫瑰經在全球天主教界的普及。1858年路德聖母顯現（Lourdes apparition）中聖母手持玫瑰經，此後玫瑰經在全球天主教世界廣泛傳播，念珠生產成為工業化宗教用品製造的重要部分。",
+    source: "Darragh, Apparition at Knock (1936); Taylor, Our Lady of Lourdes (1954)"
+  },
+  {
+    id: 22,
+    year: 1900,
+    title: "中國近代：佛教念珠學術研究",
+    religion: "佛教",
+    coords: [31.2, 121.5],
+    desc: "20世紀初，隨著佛教學術研究的興起，學者開始系統研究念珠的歷史與文化。日本學者前田慧雲、中國學者如梁啟超等開始以比較宗教學角度考察念珠起源問題，探討佛教、印度教、基督教念珠的相互關係。",
+    source: "前田慧雲《仏教史概論》；近代佛教學術研究史"
+  }
+];
+
+// ─── Color helpers ──────────────────────────────────────────────────────────
+function getColor(religion) {
+  return RELIGIONS[religion]?.color || "#aaaaaa";
+}
+
+// ─── Globe Setup ─────────────────────────────────────────────────────────────
+const container = document.getElementById("globe-container");
+let width = container.clientWidth;
+let height = container.clientHeight;
+let radius = Math.min(width, height) * 0.42;
+
+const svg = d3.select("#globe")
+  .attr("width", width)
+  .attr("height", height);
+
+const projection = d3.geoOrthographic()
+  .scale(radius)
+  .translate([width / 2, height / 2])
+  .clipAngle(90)
+  .rotate([0, -25]);
+
+const pathGen = d3.geoPath().projection(projection);
+
+// Globe groups
+const globeGroup = svg.append("g");
+const sphereEl = globeGroup.append("circle")
+  .attr("cx", width / 2).attr("cy", height / 2)
+  .attr("r", radius)
+  .attr("fill", "#0d1a30")
+  .attr("stroke", "rgba(100,140,200,0.15)")
+  .attr("stroke-width", 1.5);
+
+const graticuleEl = globeGroup.append("path")
+  .datum(d3.geoGraticule()())
+  .attr("fill", "none")
+  .attr("stroke", "rgba(100,140,200,0.06)")
+  .attr("stroke-width", 0.5);
+
+const landEl = globeGroup.append("g").attr("class","land");
+const markersEl = globeGroup.append("g").attr("class","markers");
+
+// ─── Load world data ─────────────────────────────────────────────────────────
+let worldData = null;
+let currentYear = 1900;
+let activeFilter = null; // religion filter
+let activeEvent = null;
+
+fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
+  .then(r => r.json())
+  .then(world => {
+    worldData = world;
+    const countries = topojson.feature(world, world.objects.countries);
+    landEl.selectAll("path")
+      .data(countries.features)
+      .join("path")
+      .attr("fill", "#1a2a3a")
+      .attr("stroke", "rgba(120,160,200,0.2)")
+      .attr("stroke-width", 0.4)
+      .attr("d", pathGen);
+
+    graticuleEl.attr("d", pathGen);
+    renderMarkers();
+  });
+
+// ─── Render markers ──────────────────────────────────────────────────────────
+function renderMarkers() {
+  const filtered = EVENTS.filter(e => e.year <= currentYear &&
+    (!activeFilter || e.religion === activeFilter));
+
+  markersEl.selectAll(".marker-group").remove();
+
+  const groups = markersEl.selectAll(".marker-group")
+    .data(filtered, d => d.id)
+    .join("g")
+    .attr("class", "marker-group")
+    .style("cursor", "pointer")
+    .on("mouseover", function(event, d) {
+      showTooltip(event, d);
+      d3.select(this).select(".outer-ring").attr("r", 9).attr("opacity", 0.6);
+    })
+    .on("mouseout", function(event, d) {
+      hideTooltip();
+      d3.select(this).select(".outer-ring").attr("r", 7).attr("opacity", 0.3);
+    })
+    .on("click", function(event, d) {
+      event.stopPropagation();
+      selectEvent(d);
+    });
+
+  groups.each(function(d) {
+    const g = d3.select(this);
+    const [lng, lat] = d.coords; // [lng, lat]
+    const geoCoords = [lng, lat];
+    const projected = projection(geoCoords);
+    if (!projected) return;
+
+    const [x, y] = projected;
+    g.attr("transform", `translate(${x},${y})`);
+
+    // Check if on visible hemisphere
+    const geoAngle = d3.geoDistance(geoCoords, [-projection.rotate()[0], -projection.rotate()[1]]);
+    const visible = geoAngle < Math.PI / 2;
+    g.attr("opacity", visible ? 1 : 0).style("pointer-events", visible ? "all" : "none");
+
+    const col = getColor(d.religion);
+    g.append("circle").attr("class","outer-ring")
+      .attr("r", 7).attr("fill", col).attr("opacity", 0.3);
+    g.append("circle").attr("class","inner-dot")
+      .attr("r", 4).attr("fill", col).attr("opacity", 0.95)
+      .attr("stroke", "#fff").attr("stroke-width", 0.5);
+  });
+
+  updateInfoPanel(filtered);
+}
+
+// ─── Timeline ────────────────────────────────────────────────────────────────
+const slider = document.getElementById("timeline-slider");
+const yearDisplay = document.getElementById("year-display");
+
+slider.addEventListener("input", function() {
+  currentYear = +this.value;
+  const min = +this.min, max = +this.max;
+  const pct = ((currentYear - min) / (max - min) * 100).toFixed(1);
+  this.style.setProperty("--pct", pct + "%");
+
+  if (currentYear === 1900) {
+    yearDisplay.textContent = "顯示所有年代";
+  } else if (currentYear < 0) {
+    yearDisplay.textContent = `西元前 ${Math.abs(currentYear)} 年以前`;
+  } else {
+    yearDisplay.textContent = `西元 ${currentYear} 年以前`;
+  }
+  renderMarkers();
+});
+
+// ─── Info Panel ───────────────────────────────────────────────────────────────
+function updateInfoPanel(events) {
+  const panel = document.getElementById("info-panel");
+  if (!events.length) {
+    panel.innerHTML = `<div class="placeholder">此時間範圍內<br>暫無記載</div>`;
+    return;
+  }
+  const sorted = [...events].sort((a, b) => a.year - b.year);
+  panel.innerHTML = sorted.map(e => {
+    const col = getColor(e.religion);
+    const yearStr = e.year < 0 ? `西元前 ${Math.abs(e.year)} 年` : `西元 ${e.year} 年`;
+    const isActive = activeEvent && activeEvent.id === e.id;
+    return `<div class="event-card ${isActive ? 'active' : ''}" data-id="${e.id}">
+      <div class="year-tag">${yearStr}</div>
+      <span class="religion-badge" style="background:${col}22;color:${col};border:1px solid ${col}55">${e.religion}</span>
+      <div class="title">${e.title}</div>
+      <div class="desc">${e.desc.length > 120 ? e.desc.slice(0, 120) + '…' : e.desc}</div>
+      <div class="source">📖 ${e.source}</div>
+    </div>`;
+  }).join("");
+
+  panel.querySelectorAll(".event-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const id = +card.dataset.id;
+      const ev = EVENTS.find(e => e.id === id);
+      if (ev) selectEvent(ev);
+    });
+  });
+}
+
+function selectEvent(d) {
+  activeEvent = d;
+  // Rotate globe to event
+  const [lng, lat] = d.coords;
+  const rot = projection.rotate();
+  const dur = 900;
+  d3.transition().duration(dur).tween("rotate", () => {
+    const r = d3.interpolate(rot, [-lng, -lat + 10]);
+    return t => {
+      projection.rotate(r(t));
+      updatePaths();
+    };
+  }).on("end", () => renderMarkers());
+
+  // Show full detail
+  showDetail(d);
+}
+
+function showDetail(d) {
+  const panel = document.getElementById("info-panel");
+  const col = getColor(d.religion);
+  const yearStr = d.year < 0 ? `西元前 ${Math.abs(d.year)} 年` : `西元 ${d.year} 年`;
+  panel.innerHTML = `
+    <div style="margin-bottom:10px">
+      <button id="back-btn" style="background:none;border:1px solid rgba(160,120,60,0.4);color:#c8a03c;
+        padding:4px 12px;border-radius:4px;cursor:pointer;font-size:0.72rem;font-family:inherit">
+        ← 返回列表
+      </button>
+    </div>
+    <div class="event-card active">
+      <div class="year-tag" style="font-size:0.85rem">${yearStr}</div>
+      <span class="religion-badge" style="background:${col}22;color:${col};border:1px solid ${col}55;font-size:0.7rem">
+        ${d.religion} · ${RELIGIONS[d.religion]?.label.split(' ')[1] || ''}
+      </span>
+      <div class="title" style="font-size:1rem;margin:8px 0">${d.title}</div>
+      <div class="desc" style="font-size:0.78rem;color:#c0b090;line-height:1.8">${d.desc}</div>
+      <div class="source" style="font-size:0.7rem">📖 ${d.source}</div>
+    </div>`;
+
+  document.getElementById("back-btn").addEventListener("click", () => {
+    activeEvent = null;
+    const filtered = EVENTS.filter(e => e.year <= currentYear && (!activeFilter || e.religion === activeFilter));
+    updateInfoPanel(filtered);
+  });
+}
+
+// ─── Tooltip ─────────────────────────────────────────────────────────────────
+const tooltip = document.getElementById("tooltip");
+function showTooltip(event, d) {
+  const yearStr = d.year < 0 ? `西元前 ${Math.abs(d.year)} 年` : `西元 ${d.year} 年`;
+  tooltip.innerHTML = `<strong>${d.title}</strong><br><span style="color:#9a8a6a">${yearStr} · ${d.religion}</span>`;
+  tooltip.style.display = "block";
+  moveTooltip(event);
+}
+function hideTooltip() { tooltip.style.display = "none"; }
+svg.on("mousemove", moveTooltip);
+function moveTooltip(event) {
+  if (tooltip.style.display === "none") return;
+  tooltip.style.left = (event.clientX + 14) + "px";
+  tooltip.style.top = (event.clientY - 10) + "px";
+}
+
+// ─── Drag rotation ────────────────────────────────────────────────────────────
+let dragStart = null;
+const drag = d3.drag()
+  .on("start", function(event) {
+    dragStart = { x: event.x, y: event.y, rotate: projection.rotate().slice() };
+  })
+  .on("drag", function(event) {
+    if (!dragStart) return;
+    const dx = event.x - dragStart.x;
+    const dy = event.y - dragStart.y;
+    const sens = 0.25;
+    projection.rotate([
+      dragStart.rotate[0] + dx * sens,
+      dragStart.rotate[1] - dy * sens
+    ]);
+    updatePaths();
+    renderMarkers();
+  });
+
+svg.call(drag);
+
+// Zoom
+svg.call(d3.zoom().scaleExtent([0.5, 3]).on("zoom", function(event) {
+  const s = event.transform.k * radius;
+  projection.scale(s);
+  sphereEl.attr("r", s);
+  updatePaths();
+  renderMarkers();
+}));
+
+function updatePaths() {
+  if (!worldData) return;
+  const countries = topojson.feature(worldData, worldData.objects.countries);
+  landEl.selectAll("path").data(countries.features).attr("d", pathGen);
+  graticuleEl.attr("d", pathGen);
+  sphereEl.attr("cx", width / 2).attr("cy", height / 2);
+}
+
+// Auto-rotation
+let autoRotate = true;
+const autoRotateTimer = d3.timer(() => {
+  if (!autoRotate) return;
+  const rot = projection.rotate();
+  projection.rotate([rot[0] + 0.12, rot[1]]);
+  updatePaths();
+  renderMarkers();
+});
+
+svg.on("mousedown", () => { autoRotate = false; });
+svg.on("mouseup", () => { setTimeout(() => autoRotate = true, 3000); });
+
+// ─── Legend ───────────────────────────────────────────────────────────────────
+const legendEl = document.getElementById("legend");
+Object.entries(RELIGIONS).forEach(([key, val]) => {
+  const item = document.createElement("div");
+  item.className = "legend-item";
+  item.innerHTML = `<div class="legend-dot" style="background:${val.color}"></div><span>${val.label}</span>`;
+  item.addEventListener("click", () => {
+    if (activeFilter === key) {
+      activeFilter = null;
+      document.querySelectorAll(".legend-item").forEach(i => i.classList.remove("dimmed"));
+    } else {
+      activeFilter = key;
+      document.querySelectorAll(".legend-item").forEach(i => i.classList.add("dimmed"));
+      item.classList.remove("dimmed");
+    }
+    renderMarkers();
+  });
+  legendEl.appendChild(item);
+});
+
+// ─── Resize ───────────────────────────────────────────────────────────────────
+window.addEventListener("resize", () => {
+  width = container.clientWidth;
+  height = container.clientHeight;
+  radius = Math.min(width, height) * 0.42;
+  svg.attr("width", width).attr("height", height);
+  projection.translate([width / 2, height / 2]).scale(radius);
+  sphereEl.attr("cx", width/2).attr("cy", height/2).attr("r", radius);
+  updatePaths();
+  renderMarkers();
+});
+</script>
+</body>
+</html>
