@@ -310,8 +310,8 @@ function updateSlider(v){
   var pct=((v-(-3000))/(1900-(-3000))*100).toFixed(1);
   tsl.style.setProperty("--p",pct+"%");
   if(v>=1900){yd.textContent="All eras displayed";}
-  else if(v<0){yd.textContent="Before "+Math.abs(v)+" BCE";}
-  else{yd.textContent="Before CE "+v;}
+  else if(v<0){yd.textContent=Math.abs(v)+" BCE";}
+  else{yd.textContent="CE "+v;}
 }
 tsl.addEventListener("input",function(){curYear=+this.value;updateSlider(curYear);render();});
 updateSlider(1900);
