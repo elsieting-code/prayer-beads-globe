@@ -3,521 +3,338 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Prayer Beads Historical Globe · Comparative Religion Timeline</title>
+<title>Prayer Beads Historical Globe</title>
 <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson@3"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: #0a0e1a; color: #e8dcc8;
-    font-family: 'Georgia', 'Times New Roman', serif;
-    height: 100vh; overflow: hidden;
-    display: flex; flex-direction: column;
-  }
-  #header {
-    text-align: center; padding: 11px 20px 7px;
-    background: linear-gradient(180deg, #0d1226 0%, transparent 100%);
-    position: relative; z-index: 10; flex-shrink: 0;
-  }
-  #header h1 { font-size: 1.3rem; letter-spacing: .12em; color: #f5e8c0; text-shadow: 0 0 20px rgba(200,160,80,.6); }
-  #header p  { font-size: .68rem; color: #9a8a6a; margin-top: 3px; letter-spacing: .06em; }
-  #main { flex: 1; display: flex; overflow: hidden; position: relative; }
-  #globe-container { flex: 1; display: flex; align-items: center; justify-content: center; }
-  #globe-container svg { cursor: grab; }
-  #globe-container svg:active { cursor: grabbing; }
-  #info-panel {
-    width: 310px; min-width: 310px;
-    background: rgba(10,14,26,.93);
-    border-left: 1px solid rgba(160,120,60,.3);
-    padding: 16px 14px; overflow-y: auto;
-    display: flex; flex-direction: column; gap: 11px;
-  }
-  #info-panel .placeholder { color: #5a4e38; font-size: .76rem; text-align: center; margin-top: 40px; line-height: 2; }
-  .event-card {
-    background: rgba(255,255,255,.04);
-    border: 1px solid rgba(160,120,60,.22);
-    border-radius: 6px; padding: 12px; cursor: pointer;
-    transition: background .2s, border-color .2s;
-  }
-  .event-card:hover, .event-card.active { background: rgba(200,160,60,.12); border-color: rgba(200,160,60,.5); }
-  .event-card .year-tag { font-size: .62rem; letter-spacing: .1em; color: #c8a03c; margin-bottom: 3px; }
-  .event-card .title { font-size: .85rem; font-weight: 600; color: #f0e0b0; line-height: 1.4; margin-bottom: 5px; }
-  .event-card .desc  { font-size: .72rem; color: #9a8a6a; line-height: 1.7; }
-  .event-card .source { font-size: .62rem; color: #6a5a3a; margin-top: 7px; font-style: italic; border-top: 1px solid rgba(160,120,60,.15); padding-top: 5px; }
-  .religion-badge { display: inline-block; font-size: .59rem; padding: 2px 7px; border-radius: 10px; margin-bottom: 5px; letter-spacing: .04em; }
-  #legend {
-    padding: 7px 16px; display: flex; flex-wrap: wrap; gap: 12px;
-    justify-content: center;
-    background: rgba(10,14,26,.8); border-top: 1px solid rgba(160,120,60,.15); flex-shrink: 0;
-  }
-  .legend-item { display: flex; align-items: center; gap: 5px; font-size: .68rem; color: #9a8a6a; cursor: pointer; transition: color .2s; user-select: none; }
-  .legend-item:hover { color: #e8dcc8; }
-  .legend-item.dimmed { opacity: .35; }
-  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  #timeline-bar { padding: 9px 24px 13px; background: rgba(10,14,26,.9); border-top: 1px solid rgba(160,120,60,.15); flex-shrink: 0; }
-  #timeline-bar .year-display { text-align: center; font-size: .71rem; color: #c8a03c; margin-bottom: 5px; letter-spacing: .08em; }
-  #timeline-slider {
-    -webkit-appearance: none; width: 100%; height: 3px; border-radius: 2px; outline: none;
-    background: linear-gradient(90deg, #c8a03c var(--pct,100%), #2a2418 var(--pct,100%)); cursor: pointer;
-  }
-  #timeline-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 15px; height: 15px; border-radius: 50%; background: #c8a03c; box-shadow: 0 0 8px rgba(200,160,60,.7); cursor: pointer; }
-  #timeline-slider::-moz-range-thumb { width: 15px; height: 15px; border-radius: 50%; background: #c8a03c; border: none; cursor: pointer; }
-  .timeline-labels { display: flex; justify-content: space-between; font-size: .58rem; color: #5a4e38; margin-top: 4px; }
-  #tooltip { position: fixed; pointer-events: none; background: rgba(10,14,26,.96); border: 1px solid rgba(200,160,60,.4); border-radius: 5px; padding: 7px 11px; font-size: .71rem; color: #f0e0b0; max-width: 230px; z-index: 100; display: none; line-height: 1.5; }
-  #info-panel::-webkit-scrollbar { width: 4px; }
-  #info-panel::-webkit-scrollbar-track { background: transparent; }
-  #info-panel::-webkit-scrollbar-thumb { background: rgba(160,120,60,.3); border-radius: 2px; }
-  #lang-switch {
-    position: absolute; top: 10px; right: 14px; z-index: 20;
-    background: rgba(200,160,60,.15); border: 1px solid rgba(200,160,60,.35);
-    color: #c8a03c; font-size: .65rem; padding: 4px 10px; border-radius: 4px;
-    cursor: pointer; font-family: inherit; letter-spacing: .05em;
-  }
-  #lang-switch:hover { background: rgba(200,160,60,.28); }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background:#0a0e1a; color:#e8dcc8; font-family:'Georgia','Times New Roman',serif; height:100vh; overflow:hidden; display:flex; flex-direction:column; }
+#header { text-align:center; padding:10px 20px 6px; background:linear-gradient(180deg,#0d1226 0%,transparent 100%); position:relative; z-index:10; flex-shrink:0; }
+#header h1 { font-size:1.25rem; letter-spacing:.1em; color:#f5e8c0; text-shadow:0 0 20px rgba(200,160,80,.6); }
+#header p  { font-size:.66rem; color:#9a8a6a; margin-top:3px; letter-spacing:.05em; }
+#lang-btn  { position:absolute; top:8px; right:14px; background:rgba(200,160,60,.14); border:1px solid rgba(200,160,60,.35); color:#c8a03c; font-size:.63rem; padding:3px 10px; border-radius:4px; cursor:pointer; font-family:inherit; letter-spacing:.04em; }
+#lang-btn:hover { background:rgba(200,160,60,.28); }
+#main { flex:1; display:flex; overflow:hidden; }
+#globe-container { flex:1; display:flex; align-items:center; justify-content:center; }
+#globe-container svg { cursor:grab; }
+#globe-container svg:active { cursor:grabbing; }
+#info-panel { width:296px; min-width:296px; background:rgba(10,14,26,.94); border-left:1px solid rgba(160,120,60,.3); padding:14px 12px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
+#info-panel .placeholder { color:#6a5a3a; font-size:.75rem; text-align:center; margin-top:40px; line-height:1.9; }
+.ecard { background:rgba(255,255,255,.04); border:1px solid rgba(160,120,60,.22); border-radius:6px; padding:11px; cursor:pointer; transition:background .2s,border-color .2s; }
+.ecard:hover,.ecard.active { background:rgba(200,160,60,.12); border-color:rgba(200,160,60,.5); }
+.ecard .yr  { font-size:.61rem; letter-spacing:.09em; color:#c8a03c; margin-bottom:2px; }
+.ecard .ttl { font-size:.84rem; font-weight:600; color:#f0e0b0; line-height:1.4; margin-bottom:4px; }
+.ecard .dsc { font-size:.71rem; color:#9a8a6a; line-height:1.7; }
+.ecard .src { font-size:.61rem; color:#6a5a3a; margin-top:6px; font-style:italic; border-top:1px solid rgba(160,120,60,.15); padding-top:5px; }
+.rbadge { display:inline-block; font-size:.59rem; padding:2px 7px; border-radius:10px; margin-bottom:4px; }
+#legend { padding:6px 16px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; background:rgba(10,14,26,.8); border-top:1px solid rgba(160,120,60,.15); flex-shrink:0; }
+.litm { display:flex; align-items:center; gap:5px; font-size:.68rem; color:#9a8a6a; cursor:pointer; transition:color .2s; user-select:none; }
+.litm:hover { color:#e8dcc8; }
+.litm.dim { opacity:.35; }
+.ldot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+#tbar { padding:8px 22px 12px; background:rgba(10,14,26,.9); border-top:1px solid rgba(160,120,60,.15); flex-shrink:0; }
+#tbar .yd { text-align:center; font-size:.7rem; color:#c8a03c; margin-bottom:5px; letter-spacing:.09em; }
+#tslider { -webkit-appearance:none; width:100%; height:3px; border-radius:2px; outline:none; background:linear-gradient(90deg,#c8a03c var(--p,100%),#2a2418 var(--p,100%)); cursor:pointer; }
+#tslider::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:#c8a03c; box-shadow:0 0 7px rgba(200,160,60,.7); cursor:pointer; }
+#tslider::-moz-range-thumb { width:14px; height:14px; border-radius:50%; background:#c8a03c; border:none; cursor:pointer; }
+/* labels at exact slider positions: min=-3000,max=1900,range=4900 */
+.tlabels { position:relative; height:16px; margin-top:4px; }
+.tlabels span { position:absolute; font-size:.57rem; color:#5a4e38; white-space:nowrap; }
+.tlabels span:first-child { left:0; }
+.tlabels span:last-child  { right:0; }
+.tlabels .l1 { left:40.8%; transform:translateX(-50%); }  /* 1000 BCE */
+.tlabels .l2 { left:61.2%; transform:translateX(-50%); }  /* CE 1 */
+.tlabels .l3 { left:81.6%; transform:translateX(-50%); }  /* CE 1000 */
+#tip { position:fixed; pointer-events:none; background:rgba(10,14,26,.96); border:1px solid rgba(200,160,60,.4); border-radius:5px; padding:6px 10px; font-size:.7rem; color:#f0e0b0; max-width:220px; z-index:100; display:none; line-height:1.5; }
+#info-panel::-webkit-scrollbar { width:4px; }
+#info-panel::-webkit-scrollbar-track { background:transparent; }
+#info-panel::-webkit-scrollbar-thumb { background:rgba(160,120,60,.3); border-radius:2px; }
 </style>
 </head>
 <body>
 <div id="header">
-  <button id="lang-switch" onclick="location.href='index.html'">中文版</button>
+  <button id="lang-btn" onclick="location.href='index.html'">中文版</button>
   <h1>Prayer Beads Historical Globe</h1>
-  <p>A Comparative Religion Timeline · Buddhism · Brahmanism · Christianity · Islam · Jainism</p>
+  <p>A Comparative Religion Timeline · Brahmanism · Jainism · Buddhism · Christianity · Islam</p>
 </div>
 <div id="main">
   <div id="globe-container"><svg id="globe"></svg></div>
-  <div id="info-panel">
-    <div class="placeholder">← Click a glowing dot<br>to view the historical record<br><br>Drag to rotate · Scroll to zoom<br><br>Use the timeline below<br>to filter by era</div>
-  </div>
+  <div id="info-panel"><div class="placeholder">← Click a dot to view<br>the historical record<br><br>Drag to rotate<br>Scroll to zoom<br><br>Timeline below filters by era</div></div>
 </div>
 <div id="legend"></div>
-<div id="timeline-bar">
-  <div class="year-display" id="year-display">All eras displayed</div>
-  <input type="range" id="timeline-slider" min="-3000" max="1900" value="1900" step="50">
-  <div class="timeline-labels"><span>3000 BCE</span><span>1000 BCE</span><span>CE 1000</span><span>CE 1900</span></div>
+<div id="tbar">
+  <div class="yd" id="yd">All eras displayed</div>
+  <input type="range" id="tslider" min="-3000" max="1900" value="1900" step="50">
+  <div class="tlabels">
+    <span>3000 BCE</span>
+    <span class="l1">1000 BCE</span>
+    <span class="l2">CE 1</span>
+    <span class="l3">CE 1000</span>
+    <span>CE 1900</span>
+  </div>
 </div>
-<div id="tooltip"></div>
-
+<div id="tip"></div>
 <script>
-const RELIGIONS = {
-  "Buddhism":    { color: "#e6a020", label: "Buddhism" },
-  "Brahmanism":  { color: "#e05050", label: "Brahmanism / Vedic Religion" },
-  "Christianity":{ color: "#5080e0", label: "Christianity" },
-  "Islam":       { color: "#20b080", label: "Islam" },
-  "Jainism":     { color: "#a060c0", label: "Jainism" }
+// ── All variables declared first ─────────────────────────────────────────
+var RELIGIONS = {
+  "Buddhism":    {color:"#e6a020", label:"Buddhism"},
+  "Brahmanism":  {color:"#e05050", label:"Brahmanism / Vedic Religion"},
+  "Christianity":{color:"#5080e0", label:"Christianity"},
+  "Islam":       {color:"#20b080", label:"Islam"},
+  "Jainism":     {color:"#a060c0", label:"Jainism"}
 };
 
-const EVENTS = [
-  // ── Brahmanism / Vedic ────────────────────────────────────────────────
-  {
-    id:1, year:-2600,
-    title:"Indus Valley: Earliest Archaeological Beads",
-    religion:"Brahmanism",
-    coords:[68.0,23.0],
-    desc:"Harappan culture sites (c.2600–1900 BCE) have yielded large quantities of carnelian, shell, and gold beads — the earliest material basis for South Asian bead traditions. This predates the formation of the Vedic religious system (c.1500 BCE); their use in counting prayers has no direct written evidence yet.\n\n⚠ Terminology note: 'Hinduism' is a 19th-century Western colonial construct grouping diverse Indian traditions. Ancient sources should be designated 'Vedic religion' or 'Brahmanism.'",
-    source:"Kenoyer, J.M., Ancient Cities of the Indus Valley Civilization (1998); Archaeological Survey of India"
-  },
-  {
-    id:2, year:-1000,
-    title:"Ancient India: Vedic Japa Mala Tradition",
-    religion:"Brahmanism",
-    coords:[83.0,25.3],
-    desc:"Brahmanical (Vedic) tradition used Rudraksha seeds or Tulasī wood to make prayer beads called 'Japa Mālā' (garland for recitation), employed to count mantras. The Śiva Purāṇa and other Vedic texts depict deities holding prayer beads, attesting to a deep-rooted tradition. The term 'Hinduism' (印度教) only emerged in the 19th century; this tradition belongs properly to Brahmanism.",
-    source:"Śiva Purāṇa; Jan Gonda, Change and Continuity in Indian Religion (1965); Flood, An Introduction to Hinduism (1996)"
-  },
-  // ── Jainism ──────────────────────────────────────────────────────────
-  {
-    id:3, year:-500,
-    title:"Ancient Gujarat: Jain Navkar Mālā",
-    religion:"Jainism",
-    coords:[72.5,23.0],
-    desc:"Jainism uses prayer beads to recite the Navkar Mantra ('Namo Arihantāṇam…'), typically 108 beads of coral, crystal, or Bodhi seeds. Jainism explicitly treats beads as meditation tools, not ornaments. This tradition traces to the time of Mahāvīra (c.599–527 BCE) and developed in parallel with — not derived from — the Brahmanical tradition.",
-    source:"Jain canonical texts (Āgamas); Paul Dundas, The Jains, 2nd ed. (2002)"
-  },
-  // ── Buddhism ─────────────────────────────────────────────────────────
-  {
-    id:4, year:-200,
-    title:"Śrāvastī, North India: The Muhuanzi Sūtra Scene",
-    religion:"Buddhism",
-    coords:[82.5,27.5],
-    desc:"The Foshuo Muhuanzi jing (T0786, 'Sūtra on Soapberry Beads') records the Buddha at Śrāvastī teaching King Viruḍhaka: 'If you wish to eliminate affliction and karmic obstacles, string 108 soapberry seeds and carry them always. Walking, sitting, or lying down, with focused mind recite "Buddha, Dharma, Saṃgha," moving one bead per recitation.' This is the primary documentary origin of Buddhist prayer-bead recitation (niànfó). Scholars note the sūtra may be a Chinese apocryphal composition (Makita Tairyō).",
-    source:"Foshuo Muhuanzi jing, CBETA T0786, Taishō vol.17; Makita Tairyō, Studies in Apocryphal Sūtras (1976)"
-  },
-  {
-    id:5, year:310,
-    title:"Upper Egypt: Desert Fathers' Counting Prayer",
-    religion:"Christianity",
-    coords:[31.2,26.8],
-    desc:"The Desert Fathers — including Pachomius (292–348 CE) — used knotted wool cords or small stones to count prayers (300+ recitations of the Pater Noster daily). John Cassian's Institutes (c.420 CE) also documents Egyptian monks' counting methods. This monastic tradition is the spiritual precursor of the Christian rosary.",
-    source:"Palladius, Lausiac History (419 CE); John Cassian, Institutes (c.420 CE); Gougaud, Devotional and Ascetic Practices in the Middle Ages (1927)"
-  },
-  {
-    id:6, year:400,
-    title:"Southern China: Muhuanzi Jing Circulates in Chinese Buddhism",
-    religion:"Buddhism",
-    coords:[118.8,32.1],
-    desc:"The Foshuo Muhuanzi jing (T0786, translator unknown, classified as 'lost-translator') entered Chinese Buddhist circulation, establishing the 108-bead standard and the practice of reciting the Three Jewels. This text became the cornerstone for Chinese Buddhist prayer-bead use. Its possible Chinese apocryphal origin reflects the domestic demand for a scriptural basis for bead-counting recitation.",
-    source:"Foshuo Muhuanzi jing, CBETA T0786, Taishō vol.17; Makita Tairyō, Studies in Apocryphal Sūtras"
-  },
-  {
-    id:7, year:645,
-    title:"Xuanzhong Temple, Shanxi: Daochuo's Counting Nenbutsu",
-    religion:"Buddhism",
-    coords:[112.0,37.7],
-    desc:"Daochuo (562–645 CE), the second patriarch of Chinese Pure Land Buddhism, composed the Anle ji (T1958) at Xuanzhong Temple in Shanxi. It records using beans to count nenbutsu (Buddha-name recitation): 'use small beans to count each recitation,' emphasizing the importance of accumulating repetitions. This bean-counting method is the direct textual ancestor of rosary-bead counting in Chinese Pure Land.",
-    source:"Daochuo, Anle ji, CBETA T1958, Taishō vol.47"
-  },
-  {
-    id:8, year:650,
-    title:"Arabian Peninsula: Islamic Prayer Beads (Misbaha)",
-    religion:"Islam",
-    coords:[39.8,21.4],
-    desc:"The Islamic prayer beads (Misbaha, also Subha or Tasbih) consist of 99 beads representing the 99 Beautiful Names of God (Asmāʾ Allāh al-Ḥusnā). Used to recite 'Subḥāna llāh' (Glory to God), 'Al-ḥamdu lillāh' (Praise to God), and 'Allāhu Akbar' (God is Great), 33 times each. Goldziher and others have argued Buddhist or Christian influence; others posit independent origin.",
-    source:"Ignaz Goldziher, 'Über den Rosenkranz' (1889); Otto Spies, Zur Geschichte des Rosenkranzes (1951)"
-  },
-  {
-    id:9, year:668,
-    title:"Chang'an, Ximingsi: Daoshi's Fayuan Zhulin Records Bead Use",
-    religion:"Buddhism",
-    coords:[108.9,34.3],
-    desc:"Daoshi (d. 683 CE) compiled the Fayuan Zhulin (T2122), a hundred-fascicle Buddhist encyclopedia at Ximingsi Temple in Chang'an, containing several accounts of prayer-bead use. This is a key source for the everyday use of prayer beads in early Tang Buddhism, drawing on both canonical and apocryphal materials.",
-    source:"Daoshi, Fayuan Zhulin, CBETA T2122, Taishō vol.53"
-  },
-  {
-    id:10, year:670,
-    title:"Chang'an, Guangmingsi: Shandao's Counted Nenbutsu",
-    religion:"Buddhism",
-    coords:[108.8,34.2],
-    desc:"Shandao (613–681 CE), the third patriarch of Pure Land Buddhism, propagated nenbutsu at Guangmingsi in Chang'an and composed the Guan Wuliangshoufo jing shu (T1753) and Wang sheng lisan ji (T1980). He prescribed reciting the nembutsu 'thirty thousand times per time period, six periods per day' — creating the earliest systematic bead-counting framework. Shandao's tradition is the core ideological ancestor of Chinese fingering-bead recitation.",
-    source:"Shandao, Guan Wuliangshoufo jing shu, CBETA T1753; Wang sheng lisan ji T1980, Taishō vol.47"
-  },
-  {
-    id:11, year:750,
-    title:"Chang'an: Amoghavajra Translates Three Mālā Texts",
-    religion:"Buddhism",
-    coords:[109.0,34.4],
-    desc:"Amoghavajra (705–774 CE) translated three key prayer-bead texts:\n①Vajraśekhara Yoga Mālā Sūtra (T0789) — Vajrayāna bead ritual with material specifications;\n②Foshuo jiaoliang shuzhu gongde jing (T0790) — compares merits by bead material: 'Bodhi-seed beads: one recitation = one million; crystal beads: one = one hundred million…';\n③Yijing (635–713) had also translated the Foshuo shuzhu gongde jing (T0791).\nThese three texts fundamentally shaped the theoretical and ritual framework for Chinese Buddhist prayer beads.",
-    source:"T0789, T0790, T0791, CBETA, Taishō vol.19"
-  },
-  {
-    id:12, year:756,
-    title:"Nara, Japan: Shōsōin Beads & the Tōdaiji Kenmotsu-chō",
-    religion:"Buddhism",
-    coords:[135.8,34.7],
-    desc:"The Shōsōin Repository preserves Tenpyō-period (mid-8th c.) prayer beads — the oldest surviving prayer beads in Japan. The Tōdaiji Kenmotsu-chō (Inventory of Offerings, 756 CE) records Empress Kōmyō donating Emperor Shōmu's personal effects, including crystal prayer beads (juzu/数珠). This is the earliest Japanese documentary and material evidence of prayer beads.",
-    source:"Tōdaiji Kenmotsu-chō (756); Shōsōin Treasure Catalogue; Nara National Museum catalogue"
-  },
-  {
-    id:13, year:760,
-    title:"Tang Dynasty: Feixi's Treatise on Bead-Counting Nenbutsu",
-    religion:"Buddhism",
-    coords:[108.6,34.1],
-    desc:"The Tang monk Feixi (fl. 8th c.) composed the Nianfo sanmei baowang lun (T0476) in three fascicles, the earliest Chinese Buddhist treatise to systematically argue for bead-counting recitation. Feixi advocates holding beads to gather the mind: 'Hold prayer beads, recitation following recitation, gathering the six sense organs, reciting the name with single-minded focus.' His arguments shaped the theoretical development of nenbutsu bead practice in Song and Ming.",
-    source:"Feixi, Nianfo sanmei baowang lun, CBETA T0476, Taishō vol.47"
-  },
-  {
-    id:14, year:762,
-    title:"Lhasa, Tibet: Tibetan Buddhist Mālā Tradition",
-    religion:"Buddhism",
-    coords:[91.1,29.6],
-    desc:"Padmasambhava transmitted Vajrayāna teachings to Tibet in the second half of the 8th century, establishing the Tibetan Buddhist mālā (Tibetan: Threngwa) tradition. 108 beads is standard; materials include Bodhi seeds, bone beads (symbolizing impermanence), and coral. Used to count mantras such as 'Oṃ Maṇi Padme Hūṃ' (the six-syllable mantra of Avalokiteśvara).",
-    source:"Nyingma tradition; Beer, The Handbook of Tibetan Buddhist Symbols (2003)"
-  },
-  {
-    id:15, year:785,
-    title:"Wutai Mountain: Fazhao's Five-Assembly Nenbutsu",
-    religion:"Buddhism",
-    coords:[113.5,38.9],
-    desc:"The Tang monk Fazhao (d. c.820 CE) founded the 'Five-Assembly Nenbutsu' (Wuhui nianfo) at Mount Wutai, composing the Jingtu wuhui nianfo lüe fashe yizan (T1983). Five rounds of recitation alternate from slow and gentle to rapid and loud; prayer beads counted recitations within each round. Fazhao's method entered the imperial court — Emperors Daizong and Dezong both patronized him.",
-    source:"Fazhao, Jingtu wuhui nianfo lüe fashe yizan, CBETA T1983, Taishō vol.47; Song Gaoseng zhuan, fascicle 21"
-  },
-  {
-    id:16, year:1010,
-    title:"Tiantai Mountain: Zunshi's Formalized Bead-Counting Liturgy",
-    religion:"Buddhism",
-    coords:[121.0,29.1],
-    desc:"The Northern Song monk Zunshi (Ciyun Zunshi, 964–1032 CE) composed the Wangsheng jingtu chanwuan yi at Mount Tiantai, institutionalizing the use of prayer beads to count nenbutsu within a formal liturgical framework. Together with Siming Zhili (960–1028 CE), Zunshi drove the Song-dynasty Tiantai Pure Land movement, marking the transition of bead-counting from personal practice to regularized ritual.",
-    source:"Zunshi, Wangsheng jingtu chanwuan yi, CBETA; Chen Yangjiong, History of Chinese Pure Land School"
-  },
-  {
-    id:17, year:1057,
-    title:"Coventry, England: Lady Godiva's Prayer Beads",
-    religion:"Christianity",
-    coords:[-1.5,52.4],
-    desc:"Lady Godiva (d. c.1067 CE) bequeathed in her will a string of jewelled 'paternoster' beads to hang around a statue of the Virgin Mary. This is one of the earliest documented uses of prayer beads in England, attesting to the bond between the Pater Noster prayer and bead-counting in medieval European lay piety.",
-    source:"Roger of Wendover, Flores Historiarum (13th c.); Winston-Allen, Stories of the Rose (1997)"
-  },
-  {
-    id:18, year:1090,
-    title:"Mount Athos: Orthodox Prayer Rope (Komboskini)",
-    religion:"Christianity",
-    coords:[24.3,40.1],
-    desc:"The Orthodox prayer rope (Greek: Komboskini; Slavic: Chotki) — knotted wool, usually 33 or 100 knots — is used to count recitations of the Jesus Prayer: 'Lord Jesus Christ, Son of God, have mercy on me, a sinner.' This tool is central to Hesychast contemplative practice and is closely associated with the Mount Athos monastic tradition, likely formalized in the 10th–11th century.",
-    source:"Hesychast tradition; Mount Athos monastic practice; Brianchaninov, On Prayer (19th c.)"
-  },
-  {
-    id:19, year:1160,
-    title:"Jiangxi: Wang Rixiu's Manual for Fingering-Bead Recitation",
-    religion:"Buddhism",
-    coords:[115.9,29.6],
-    desc:"The Song layman Wang Rixiu (d. 1173 CE) composed the Longshu zengguang jingtu wen (T1970A), providing detailed instructions for fingering-bead recitation: 'When reciting the Buddha's name, hold the prayer beads; with each recitation move one bead, accumulating a count. Daily recitations should reach ten thousand, or even a hundred thousand.' The text includes miraculous tales of practitioners who attained rebirth through bead-counting recitation, profoundly shaping the Chinese Pure Land tradition of daily bead practice.",
-    source:"Wang Rixiu, Longshu zengguang jingtu wen, CBETA T1970A, Taishō vol.47"
-  },
-  {
-    id:20, year:1175,
-    title:"Korean Peninsula: Goryeo-Dynasty Prayer Bead Culture",
-    religion:"Buddhism",
-    coords:[126.9,37.6],
-    desc:"Buddhism flourished in the Goryeo dynasty (918–1392 CE), and prayer beads (yeomju/念珠) were widely used. The National Teacher Ŭich'ŏn (1055–1101 CE) promoted Cheontae-school nenbutsu; beads appear in both court and popular records. The National Museum of Korea holds several fine Goryeo-period bead examples.",
-    source:"National Museum of Korea collections; Iryeon, Samguk Yusa (1281); Korean Cultural Heritage Administration"
-  },
-  {
-    id:21, year:1200,
-    title:"Mingzhou (Ningbo): Zongxiao's Anthology of Bead-Recitation Miracles",
-    religion:"Buddhism",
-    coords:[121.5,29.9],
-    desc:"The Song monk Zongxiao (1151–1214 CE) at Yanjingsi Temple in Mingzhou compiled the Lebang wenlei (X0107), a five-fascicle anthology of Pure Land rebirth miracle tales. Multiple accounts describe practitioners 'holding beads while calling the name' or 'fingering beads in recitation' and attaining rebirth — for example: 'A layman recited while fingering beads, ten thousand repetitions daily, uninterrupted for years; at death, an auspicious fragrance filled the room and he died in meditation.' This is the most important Song-dynasty collection of bead-recitation miracle literature.",
-    source:"Zongxiao, Lebang wenlei, CBETA X0107, Xuzangjing"
-  },
-  {
-    id:22, year:1208,
-    title:"Toulouse, France: St. Dominic and the Rosary",
-    religion:"Christianity",
-    coords:[1.4,43.6],
-    desc:"St. Dominic (1170–1221 CE) is credited in tradition with receiving the rosary from the Virgin Mary during his mission against the Albigensian heresy in France (c.1208). Historians treat this account cautiously, but the Dominican Order's role in systematizing and spreading the rosary is undisputed. In the 15th century, Alanus de Rupe promulgated the Confraternity of the Rosary across Europe.",
-    source:"Alanus de Rupe (15th c.); Winston-Allen, Stories of the Rose (1997); Thurston, 'The Rosary,' Catholic Encyclopedia (1911)"
-  },
-  {
-    id:23, year:1270,
-    title:"Siming (Ningbo): Zhipan's Fozu Tongji Records Bead Practices",
-    religion:"Buddhism",
-    coords:[121.4,29.8],
-    desc:"The late-Song monk Zhipan (fl. 13th c., d. after 1269) at Siming compiled the Fozu tongji (T2035) in 54 fascicles, systematically recording how Pure Land patriarchs used prayer beads, as well as Song imperial gifts of beads and lay bead use. It is the most important source for the institutionalization of prayer-bead recitation in Song Buddhism.",
-    source:"Zhipan, Fozu tongji, CBETA T2035, Taishō vol.49"
-  },
-  {
-    id:24, year:1389,
-    title:"Persia (Iran): Islamic Prayer-Bead Craft at Its Height",
-    religion:"Islam",
-    coords:[51.4,35.7],
-    desc:"In the medieval Islamic world, misbaha production became a refined craft. Beads of ambergris, coral, agate, and ivory were prized. Persian and Ottoman workshops produced exquisite examples; Ottoman sultans gifted beads as marks of honour. The Tesbihci Esnafı (prayer-bead craftsmen's guild) of the 15th-century Ottoman Empire is among the earliest known specialized bead-craft guilds.",
-    source:"Venetia Porter, The Art of Hajj (2012); Spies, Zur Geschichte des Rosenkranzes (1951)"
-  },
-  {
-    id:25, year:1470,
-    title:"Rome: Standardization of the Rosary",
-    religion:"Christianity",
-    coords:[12.5,41.9],
-    desc:"Pope Sixtus IV approved the Dominican Confraternity of the Rosary in the 1470s, consolidating rosary practice. The form was progressively standardized to 150 beads (15 mysteries, each decade 10 Ave Marias + 1 Pater Noster). In 1569, Pope Pius V's Consueverunt Romani Pontifices formally established the rosary prayers, making the rosary Catholicism's most prominent devotional form.",
-    source:"Pius V, Consueverunt Romani Pontifices (1569); Veit, Volksfrommes Brauchtum (1936)"
-  },
-  {
-    id:26, year:1600,
-    title:"Yunqi Monastery, Hangzhou: Zhuhong's Essay on Prayer Beads",
-    religion:"Buddhism",
-    coords:[120.1,30.2],
-    desc:"Yunqi Zhuhong (Lianchi Dashi, 1535–1615 CE) wrote 'On Prayer Beads' in his Zhuchuang suibi: 'The prayer beads were established for the scattered-minded, to gather the body and mind through this object.' He warned against treating beads as status symbols. His Wangsheng ji (T2072) collects miracle tales of practitioners who recited while fingering beads — e.g., 'A layman recited 100,000 times daily with beads for 30 years; at death an auspicious fragrance filled the room and he died seated in meditation.'",
-    source:"Zhuhong, Zhuchuang suibi; Wangsheng ji, CBETA T2072, Taishō vol.51; Yunqi fahui"
-  },
-  {
-    id:27, year:1603,
-    title:"Edo, Japan: Sect-Specific Prayer Beads Diversify",
-    religion:"Buddhism",
-    coords:[139.7,35.7],
-    desc:"In the Edo period (1603–1868) each Japanese Buddhist sect developed its own distinctive bead specifications: Shingon — 108 beads in a double-loop; Jōdo Shinshū (Honganji) — lay parishioner beads; Nichiren — 106 beads (10 large + 96 small); Rinzai Zen — 18-bead string; Tendai with its own format. Bead-making (juzu-shi) became an important traditional craft in Kyoto and Nara, still practiced today.",
-    source:"Takeuchi Michikei, History of Juzu; sect regulations; Kyoto juzu craft history"
-  },
-  {
-    id:28, year:1845,
-    title:"Lourdes, France: The Rosary Goes Global",
-    religion:"Christianity",
-    coords:[0.0,43.1],
-    desc:"19th-century Catholic revival drove the globalization of the rosary. The 1858 apparitions at Lourdes, where the Virgin appeared to Bernadette Soubirous holding a rosary, intensified worldwide devotion. Industrial production of rosary beads (centered in Ireland and Italy) made them widely accessible; missionary movements carried them to Catholic communities across the globe.",
-    source:"Downey, A Journey with Mary: A History of the Rosary (2013); Taylor, Our Lady of Lourdes (1954)"
-  },
-  {
-    id:29, year:1900,
-    title:"East Asia: Comparative Academic Study of Prayer Beads",
-    religion:"Buddhism",
-    coords:[121.5,31.2],
-    desc:"From the late 19th century, comparative religion scholars systematically studied prayer beads across traditions: Goldziher (1889) on Islamic bead origins; Thurston (1900) on the rosary's history; Japanese scholars Maeda Eun and Mochizuki Shinkō examined Buddhist bead texts. Chinese Buddhist scholars compiled entries in encyclopedic works such as the Fojiao Da Cidian. Modern scholarship crosses Buddhist studies, Catholic studies, and Islamic studies.",
-    source:"Goldziher, 'Über den Rosenkranz' (1889); Thurston, The Month (1900); Mochizuki Shinkō, Buddhist Great Dictionary"
-  }
+var EVENTS = [
+  {id:1,year:-2600,title:"Indus Valley: Earliest Archaeological Beads",religion:"Brahmanism",coords:[68.0,23.0],
+   desc:"Harappan culture sites (c.2600-1900 BCE) yielded large quantities of carnelian, shell, and gold beads. This predates the Vedic religious system (c.1500 BCE); their use for counting prayers has no direct textual evidence yet.\n\nNote: 'Hinduism' is a 19th-century Western colonial construct grouping diverse Indian traditions. Ancient sources should be called 'Vedic religion' or 'Brahmanism.'",
+   source:"Kenoyer, Ancient Cities of the Indus Valley Civilization (1998); Archaeological Survey of India"},
+  {id:2,year:-1000,title:"Ancient India: Brahmanical Japa Mala Tradition",religion:"Brahmanism",coords:[83.0,25.3],
+   desc:"Brahmanical (Vedic) tradition used Rudraksha seeds or Tulasi wood to make 'Japa Mala' (recitation garlands) for counting mantras. The Shiva Purana and Vedic texts depict deities holding prayer beads. The term 'Hinduism' appeared only in the 19th century; this tradition belongs properly to Brahmanism.",
+   source:"Shiva Purana; Jan Gonda, Change and Continuity in Indian Religion (1965); Flood, An Introduction to Hinduism (1996)"},
+  {id:3,year:-500,title:"Ancient Gujarat: Jain Prayer Beads (Navkar Mala)",religion:"Jainism",coords:[72.5,23.0],
+   desc:"Jainism uses prayer beads to recite the Navkar Mantra ('Namo Arihantanam...'), typically 108 beads of coral, crystal, or Bodhi seeds. Jainism treats beads as meditation tools, not ornaments. The tradition traces to the time of Mahavira (c.599-527 BCE) and developed in parallel with Brahmanical tradition.",
+   source:"Jain canonical texts (Agamas); Paul Dundas, The Jains, 2nd ed. (2002)"},
+  {id:4,year:-200,title:"Shravasti, N. India: The Muhuanzi Sutra Scene",religion:"Buddhism",coords:[82.5,27.5],
+   desc:"The Foshuo Muhuanzi jing (T0786) records the Buddha at Shravasti teaching King Virudhaka: 'If you wish to eliminate affliction and karmic obstacles, string 108 soapberry seeds and carry them always. With focused mind, recite Buddha, Dharma, Sangha, moving one bead per recitation.' This is the primary documentary source for Buddhist prayer-bead recitation. Scholars note it may be a Chinese apocryphal composition (Makita Tairyo).",
+   source:"Foshuo Muhuanzi jing, CBETA T0786, Taisho vol.17; Makita Tairyo, Studies in Apocryphal Sutras (1976)"},
+  {id:5,year:310,title:"Upper Egypt: Desert Fathers' Counting Prayer",religion:"Christianity",coords:[31.2,26.8],
+   desc:"Desert Fathers such as Pachomius (292-348 CE) used knotted wool cords or small stones to count prayers (300+ daily recitations of the Pater Noster). John Cassian's Institutes (c.420 CE) documents Egyptian monks' counting methods. This monastic tradition is the spiritual precursor of the Christian rosary.",
+   source:"Palladius, Lausiac History (419); Cassian, Institutes (c.420); Gougaud, Devotional and Ascetic Practices (1927)"},
+  {id:6,year:400,title:"Southern China: Muhuanzi Jing Circulates",religion:"Buddhism",coords:[118.8,32.1],
+   desc:"The Foshuo Muhuanzi jing (T0786, translator unknown, 'lost-translator') entered Chinese Buddhist circulation, establishing the 108-bead standard and the practice of reciting the Three Jewels. It became the cornerstone text for Chinese Buddhist bead use. Its possible Chinese apocryphal origin reflects domestic demand for a bead-counting practice text.",
+   source:"Foshuo Muhuanzi jing, CBETA T0786, Taisho vol.17; Makita Tairyo, Studies in Apocryphal Sutras"},
+  {id:7,year:645,title:"Xuanzhong Temple, Shanxi: Daochuo's Counting Nenbutsu",religion:"Buddhism",coords:[112.0,37.7],
+   desc:"Daochuo (562-645 CE), second patriarch of Chinese Pure Land, composed the Anle ji (T1958) at Xuanzhong Temple, recording the use of beans to count Buddha-name recitations: 'use small beans to count each recitation,' emphasizing the importance of accumulating repetitions. This bean-counting method is the direct textual ancestor of rosary-bead counting in Chinese Pure Land.",
+   source:"Daochuo, Anle ji, CBETA T1958, Taisho vol.47"},
+  {id:8,year:650,title:"Arabian Peninsula: Islamic Prayer Beads (Misbaha)",religion:"Islam",coords:[39.8,21.4],
+   desc:"The Islamic prayer beads (Misbaha, also Subha or Tasbih) consist of 99 beads representing the 99 Beautiful Names of God. Used to recite 'Subhana llah' (Glory to God), 'Al-hamdu lillah' (Praise to God), and 'Allahu Akbar' (God is Great), 33 times each. Some scholars (Goldziher) argue Buddhist or Christian influence; others posit independent origin.",
+   source:"Ignaz Goldziher, 'Uber den Rosenkranz' (1889); Otto Spies, Zur Geschichte des Rosenkranzes (1951)"},
+  {id:9,year:668,title:"Chang'an: Daoshi's Fayuan Zhulin Records Bead Use",religion:"Buddhism",coords:[108.9,34.3],
+   desc:"Daoshi (d.683 CE) compiled the Fayuan Zhulin (T2122) in 100 fascicles at Ximingsi Temple, Chang'an — a Buddhist encyclopedia containing several accounts of prayer-bead use and miraculous stories, serving as a key source for the everyday use of beads in early Tang Buddhism.",
+   source:"Daoshi, Fayuan Zhulin, CBETA T2122, Taisho vol.53"},
+  {id:10,year:670,title:"Chang'an: Shandao's Systematic Nenbutsu Counting",religion:"Buddhism",coords:[108.7,34.15],
+   desc:"Shandao (613-681 CE), third Pure Land patriarch, propagated nenbutsu at Guangmingsi in Chang'an. His Guan Wuliangshoufo jing shu (T1753) and Wang sheng lisan ji (T1980) prescribed 'thirty thousand recitations per time period, six periods per day' — the earliest systematic bead-counting framework. Shandao's tradition is the core ancestor of Chinese fingering-bead recitation.",
+   source:"Shandao, T1753; Wang sheng lisan ji T1980, CBETA, Taisho vol.47"},
+  {id:11,year:750,title:"Chang'an: Amoghavajra Translates Three Mala Texts",religion:"Buddhism",coords:[109.1,34.45],
+   desc:"Amoghavajra (705-774 CE) translated three key texts:\n(1) Vajrashekhara Yoga Mala Sutra (T0789) — Vajrayana bead ritual;\n(2) Jiaoliang shuzhu gongde jing (T0790) — merits by material: 'Bodhi-seed beads: 1 recitation = 1 million; crystal beads: 1 = 100 million';\n(3) Yijing (635-713) translated the Shuzhu gongde jing (T0791) similarly. These three texts fundamentally shaped Chinese Buddhist prayer-bead theory.",
+   source:"T0789, T0790, T0791, CBETA, Taisho vol.19"},
+  {id:12,year:756,title:"Nara, Japan: Shosoin Beads and the Todaiji Inventory",religion:"Buddhism",coords:[135.8,34.7],
+   desc:"The Shosoin Repository preserves mid-8th century prayer beads — the oldest surviving juzu in Japan. The Todaiji Kenmotsu-cho (756 CE) records Empress Komyo donating Emperor Shomu's effects including crystal prayer beads — the earliest Japanese documentary and material evidence of juzu (prayer beads).",
+   source:"Todaiji Kenmotsu-cho (756); Shosoin Treasure Catalogue; Nara National Museum catalogue"},
+  {id:13,year:760,title:"Tang China: Feixi's Treatise on Bead-Counting Nenbutsu",religion:"Buddhism",coords:[108.5,34.05],
+   desc:"The Tang monk Feixi (fl. 8th c.) composed the Nianfo sanmei baowang lun (T0476) in three fascicles — the earliest Chinese Buddhist treatise to systematically argue for bead-counting recitation: 'Hold prayer beads, recitation following recitation, gathering the six sense organs, reciting the name with single-minded focus.' His arguments shaped Song and Ming nenbutsu bead practice.",
+   source:"Feixi, Nianfo sanmei baowang lun, CBETA T0476, Taisho vol.47"},
+  {id:14,year:762,title:"Lhasa, Tibet: Tibetan Buddhist Mala Tradition",religion:"Buddhism",coords:[91.1,29.6],
+   desc:"Padmasambhava transmitted Vajrayana teachings to Tibet in the late 8th century, establishing the Tibetan mala (Threngwa) tradition. 108 beads is standard; materials include Bodhi seeds, bone beads (symbolizing impermanence), and coral. Used to count mantras such as 'Om Mani Padme Hum' (the six-syllable mantra of Avalokiteshvara).",
+   source:"Nyingma tradition; Beer, The Handbook of Tibetan Buddhist Symbols (2003)"},
+  {id:15,year:785,title:"Mount Wutai: Fazhao's Five-Assembly Nenbutsu",religion:"Buddhism",coords:[113.5,38.9],
+   desc:"The Tang monk Fazhao (d. c.820 CE) founded the 'Five-Assembly Nenbutsu' at Mount Wutai, composing the Jingtu wuhui nianfo lue fashe yizan (T1983). Five rounds alternate from slow to rapid recitation; prayer beads count recitations within each round. Fazhao's method entered the imperial court — Emperors Daizong and Dezong both patronized him.",
+   source:"Fazhao, T1983, CBETA, Taisho vol.47; Song Gaoseng zhuan, fascicle 21"},
+  {id:16,year:1010,title:"Mt. Tiantai: Zunshi Institutionalizes Bead-Counting Liturgy",religion:"Buddhism",coords:[121.0,29.1],
+   desc:"Zunshi (Ciyun Zunshi, 964-1032 CE) composed the Wangsheng jingtu chanwuan yi at Mount Tiantai, institutionalizing prayer-bead counting within formal liturgical ritual. Together with Zhili (960-1028 CE), Zunshi drove the Song Tiantai Pure Land movement. This marks the transition of bead-counting from personal practice to standardized liturgy.",
+   source:"Zunshi, Wangsheng jingtu chanwuan yi, CBETA; Chen Yangjiong, History of Chinese Pure Land School"},
+  {id:17,year:1057,title:"Coventry, England: Lady Godiva's Prayer Beads",religion:"Christianity",coords:[-1.5,52.4],
+   desc:"Lady Godiva (d. c.1067 CE) bequeathed in her will a string of jewelled 'paternoster' beads to hang around a statue of the Virgin Mary. One of the earliest documented uses of prayer beads in England, attesting to the bond between the Pater Noster prayer and bead-counting in medieval European lay piety.",
+   source:"Roger of Wendover, Flores Historiarum (13th c.); Winston-Allen, Stories of the Rose (1997)"},
+  {id:18,year:1090,title:"Mount Athos: Orthodox Prayer Rope (Komboskini)",religion:"Christianity",coords:[24.3,40.1],
+   desc:"The Orthodox prayer rope (Greek: Komboskini; Slavic: Chotki) — knotted wool, usually 33 or 100 knots — counts recitations of the Jesus Prayer: 'Lord Jesus Christ, Son of God, have mercy on me, a sinner.' Central to Hesychast contemplative practice and closely associated with the Mount Athos monastic tradition, formalized c.10th-11th century.",
+   source:"Hesychast tradition; Mount Athos monastic practice; Brianchaninov, On Prayer (19th c.)"},
+  {id:19,year:1160,title:"Jiangxi: Wang Rixiu's Manual for Fingering-Bead Recitation",religion:"Buddhism",coords:[115.9,29.6],
+   desc:"The Song layman Wang Rixiu (d.1173 CE) composed the Longshu zengguang jingtu wen (T1970A), giving detailed instructions for fingering-bead recitation: 'When reciting, hold prayer beads; with each recitation move one bead... daily recitations should reach ten thousand, or even a hundred thousand.' Includes many miracle tales of practitioners who attained rebirth through bead-counting.",
+   source:"Wang Rixiu, Longshu zengguang jingtu wen, CBETA T1970A, Taisho vol.47"},
+  {id:20,year:1175,title:"Korean Peninsula: Goryeo-Dynasty Prayer Bead Culture",religion:"Buddhism",coords:[126.9,37.6],
+   desc:"Buddhism flourished in the Goryeo dynasty (918-1392 CE) and prayer beads (yeomju/念珠) were widely used. The National Teacher Uich'on (1055-1101 CE) promoted Cheontae-school nenbutsu; beads appear in both court and popular records. The National Museum of Korea holds fine Goryeo-period bead examples.",
+   source:"National Museum of Korea collections; Iryeon, Samguk Yusa (1281); Korean Cultural Heritage Administration"},
+  {id:21,year:1200,title:"Mingzhou (Ningbo): Zongxiao's Anthology of Bead-Recitation Miracles",religion:"Buddhism",coords:[121.5,29.9],
+   desc:"The Song monk Zongxiao (1151-1214 CE) at Yanjingsi Temple compiled the Lebang wenlei (X0107) in five fascicles, collecting Pure Land rebirth miracle tales. Multiple accounts describe practitioners 'holding beads while calling the name' and attaining rebirth: 'A layman recited holding beads, ten thousand times daily, uninterrupted for years; at death auspicious fragrance filled the room.'",
+   source:"Zongxiao, Lebang wenlei, CBETA X0107, Xuzangjing"},
+  {id:22,year:1208,title:"Toulouse, France: St. Dominic and the Rosary",religion:"Christianity",coords:[1.4,43.6],
+   desc:"St. Dominic (1170-1221 CE) is credited in tradition with receiving the rosary from the Virgin Mary during his French mission (c.1208). Historians treat this account cautiously, but the Dominican Order's role in systematizing the rosary is undisputed. In the 15th century, Alanus de Rupe spread Rosary Confraternities across Europe.",
+   source:"Alanus de Rupe (15th c.); Winston-Allen, Stories of the Rose (1997); Thurston, Catholic Encyclopedia (1911)"},
+  {id:23,year:1270,title:"Siming (Ningbo): Zhipan's Fozu Tongji Records Bead Practices",religion:"Buddhism",coords:[121.3,29.75],
+   desc:"The late-Song monk Zhipan (fl.13th c.) at Siming compiled the Fozu tongji (T2035) in 54 fascicles, systematically recording Pure Land patriarchs' use of prayer beads and Song imperial bead-gifting records. The most important source for the institutionalization of bead-counting in Song Buddhism.",
+   source:"Zhipan, Fozu tongji, CBETA T2035, Taisho vol.49"},
+  {id:24,year:1389,title:"Persia (Iran): Islamic Prayer-Bead Craft at Its Height",religion:"Islam",coords:[51.4,35.7],
+   desc:"In the medieval Islamic world, misbaha production became a refined craft using ambergris, coral, agate, and ivory. Persian and Ottoman workshops produced exquisite examples. The Ottoman Tesbihci Esnafi (prayer-bead craftsmen's guild) of the 15th century is among the earliest known specialized bead-craft guilds.",
+   source:"Venetia Porter, The Art of Hajj (2012); Spies, Zur Geschichte des Rosenkranzes (1951)"},
+  {id:25,year:1470,title:"Rome: Standardization of the Rosary",religion:"Christianity",coords:[12.5,41.9],
+   desc:"Pope Sixtus IV approved the Dominican Rosary Confraternity in the 1470s. In 1569 Pope Pius V's Consueverunt Romani Pontifices formally established the rosary prayers: 150 beads (15 mysteries, each decade 10 Ave Marias + 1 Pater Noster). The rosary became Catholicism's most prominent devotional form.",
+   source:"Pius V, Consueverunt Romani Pontifices (1569); Veit, Volksfrommes Brauchtum (1936)"},
+  {id:26,year:1600,title:"Yunqi Monastery, Hangzhou: Zhuhong on Prayer Beads",religion:"Buddhism",coords:[120.1,30.2],
+   desc:"Yunqi Zhuhong (1535-1615 CE) wrote 'On Prayer Beads' in his Zhuchuang suibi: 'The prayer beads were established for the scattered-minded, to gather body and mind through this object.' His Wangsheng ji (T2072) collects miracle tales of bead-counting practitioners: 'A layman recited 100,000 times daily with beads for 30 years; at death an auspicious fragrance filled the room and he died in seated meditation.'",
+   source:"Zhuhong, Zhuchuang suibi; Wangsheng ji, CBETA T2072, Taisho vol.51"},
+  {id:27,year:1603,title:"Edo, Japan: Sect-Specific Prayer Beads Diversify",religion:"Buddhism",coords:[139.7,35.7],
+   desc:"In the Edo period (1603-1868 CE) each Japanese Buddhist sect developed its own bead format: Shingon — 108 beads double-loop; Jodo Shinshu — lay parishioner beads; Nichiren — 106 beads (10 large + 96 small); Rinzai Zen — 18-bead string; Tendai with its own format. Bead-making (juzu-shi) became an important traditional craft in Kyoto and Nara.",
+   source:"Takeuchi Michikei, History of Juzu; sect regulations; Kyoto juzu craft history"},
+  {id:28,year:1845,title:"Lourdes, France: The Rosary Goes Global",religion:"Christianity",coords:[0.0,43.1],
+   desc:"19th-century Catholic revival drove the globalization of the rosary. The 1858 apparitions at Lourdes, where the Virgin appeared to Bernadette Soubirous holding a rosary, intensified worldwide devotion. Industrial production (centered in Ireland and Italy) made rosary beads widely accessible; missionaries carried them to Catholic communities across the globe.",
+   source:"Downey, A Journey with Mary: A History of the Rosary (2013); Taylor, Our Lady of Lourdes (1954)"},
+  {id:29,year:1900,title:"Comparative Academic Study of Prayer Beads",religion:"Buddhism",coords:[121.5,31.2],
+   desc:"From the late 19th century, scholars systematically studied prayer beads across traditions: Goldziher (1889) on Islamic bead origins; Thurston (1900) on the rosary's history; Japanese scholars Maeda Eun and Mochizuki Shinko examined Buddhist bead texts. Chinese Buddhist scholars compiled entries in encyclopedic works. Modern scholarship crosses Buddhist studies, Catholic studies, and Islamic studies.",
+   source:"Goldziher, 'Uber den Rosenkranz' (1889); Thurston, The Month (1900); Mochizuki Shinko, Buddhist Great Dictionary"}
 ];
 
-// ── Globe setup (identical logic to Chinese version) ──────────────────────
-function getColor(r){ return RELIGIONS[r]?.color || "#aaa"; }
+// ── Globe ────────────────────────────────────────────────────────────────
+function col(r){ return RELIGIONS[r]?RELIGIONS[r].color:"#aaa"; }
 
-const container = document.getElementById("globe-container");
-let W = container.clientWidth, H = container.clientHeight;
-let R = Math.min(W,H) * 0.42;
+var ctr = document.getElementById("globe-container");
+var W=ctr.clientWidth, H=ctr.clientHeight, R=Math.min(W,H)*.42;
 
-const svg = d3.select("#globe").attr("width",W).attr("height",H);
-const projection = d3.geoOrthographic()
-  .scale(R).translate([W/2,H/2]).clipAngle(90).rotate([0,-25]);
-const pathGen = d3.geoPath().projection(projection);
+var svg = d3.select("#globe").attr("width",W).attr("height",H);
+var proj = d3.geoOrthographic().scale(R).translate([W/2,H/2]).clipAngle(90).rotate([0,-25]);
+var path = d3.geoPath().projection(proj);
 
-const gG = svg.append("g");
-const sphereEl = gG.append("circle").attr("cx",W/2).attr("cy",H/2).attr("r",R)
-  .attr("fill","#0d1a30").attr("stroke","rgba(100,140,200,.15)").attr("stroke-width",1.5);
-const graticuleEl = gG.append("path").datum(d3.geoGraticule()())
-  .attr("fill","none").attr("stroke","rgba(100,140,200,.06)").attr("stroke-width",.5);
-const landEl = gG.append("g");
-const markersEl = gG.append("g");
+var root=svg.append("g");
+var sph=root.append("circle").attr("cx",W/2).attr("cy",H/2).attr("r",R).attr("fill","#0d1a30").attr("stroke","rgba(100,140,200,.15)").attr("stroke-width",1.5);
+var grat=root.append("path").datum(d3.geoGraticule()()).attr("fill","none").attr("stroke","rgba(100,140,200,.06)").attr("stroke-width",.5);
+var land=root.append("g");
+var mkrs=root.append("g");
 
-let worldData=null, currentYear=1900, activeFilter=null, activeEvent=null;
+var worldData=null, curYear=1900, filt=null, selEv=null, autoRot=true;
 
 fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
-  .then(r=>r.json()).then(world=>{
-    worldData=world;
-    landEl.selectAll("path").data(topojson.feature(world,world.objects.countries).features)
-      .join("path").attr("fill","#1a2a3a").attr("stroke","rgba(120,160,200,.2)")
-      .attr("stroke-width",.4).attr("d",pathGen);
-    graticuleEl.attr("d",pathGen);
-    renderMarkers();
+  .then(function(r){return r.json();}).then(function(w){
+    worldData=w;
+    land.selectAll("path").data(topojson.feature(w,w.objects.countries).features)
+      .join("path").attr("fill","#1a2a3a").attr("stroke","rgba(120,160,200,.2)").attr("stroke-width",.4).attr("d",path);
+    grat.attr("d",path);
+    render();
   });
 
-function renderMarkers(){
-  const filtered=EVENTS.filter(e=>e.year<=currentYear&&(!activeFilter||e.religion===activeFilter));
-  markersEl.selectAll(".mg").remove();
-  const groups=markersEl.selectAll(".mg").data(filtered,d=>d.id).join("g").attr("class","mg")
+function render(){
+  var evts=EVENTS.filter(function(e){return e.year<=curYear&&(!filt||e.religion===filt);});
+  mkrs.selectAll(".mg").remove();
+  mkrs.selectAll(".mg").data(evts,function(d){return d.id;}).join("g").attr("class","mg")
     .style("cursor","pointer")
-    .on("mouseover",(ev,d)=>{ showTip(ev,d); d3.select(ev.currentTarget).select(".or").attr("r",9).attr("opacity",.6); })
-    .on("mouseout",(ev,d)=>{ hideTip(); d3.select(ev.currentTarget).select(".or").attr("r",7).attr("opacity",.3); })
-    .on("click",(ev,d)=>{ ev.stopPropagation(); selectEvent(d); });
-  groups.each(function(d){
-    const g=d3.select(this);
-    const proj=projection(d.coords);
-    if(!proj) return;
-    const [x,y]=proj;
-    g.attr("transform",`translate(${x},${y})`);
-    const angle=d3.geoDistance(d.coords,[-projection.rotate()[0],-projection.rotate()[1]]);
-    const vis=angle<Math.PI/2;
-    g.attr("opacity",vis?1:0).style("pointer-events",vis?"all":"none");
-    const col=getColor(d.religion);
-    g.append("circle").attr("class","or").attr("r",7).attr("fill",col).attr("opacity",.3);
-    g.append("circle").attr("class","ir").attr("r",4).attr("fill",col).attr("opacity",.95)
-      .attr("stroke","#fff").attr("stroke-width",.5);
-  });
-  updatePanel(filtered);
+    .on("mouseover",function(ev,d){tipShow(ev,d);d3.select(ev.currentTarget).select(".o").attr("r",9).attr("opacity",.6);})
+    .on("mouseout", function(ev,d){tipHide();d3.select(ev.currentTarget).select(".o").attr("r",7).attr("opacity",.3);})
+    .on("click",    function(ev,d){ev.stopPropagation();pick(d);})
+    .each(function(d){
+      var g=d3.select(this), p2=proj(d.coords);
+      if(!p2) return;
+      g.attr("transform","translate("+p2[0]+","+p2[1]+")");
+      var a=d3.geoDistance(d.coords,[-proj.rotate()[0],-proj.rotate()[1]]);
+      var v=a<Math.PI/2;
+      g.attr("opacity",v?1:0).style("pointer-events",v?"all":"none");
+      var c=col(d.religion);
+      g.append("circle").attr("class","o").attr("r",7).attr("fill",c).attr("opacity",.3);
+      g.append("circle").attr("class","i").attr("r",4).attr("fill",c).attr("opacity",.95).attr("stroke","#fff").attr("stroke-width",.5);
+    });
+  listPanel(evts);
 }
 
-function updatePanel(events){
-  const panel=document.getElementById("info-panel");
-  if(!events.length){ panel.innerHTML=`<div class="placeholder">No records in this time range.</div>`; return; }
-  const sorted=[...events].sort((a,b)=>a.year-b.year);
-  panel.innerHTML=sorted.map(e=>{
-    const col=getColor(e.religion);
-    const ys=e.year<0?`${Math.abs(e.year)} BCE`:`CE ${e.year}`;
-    const active=activeEvent&&activeEvent.id===e.id?"active":"";
-    return `<div class="event-card ${active}" data-id="${e.id}">
-      <div class="year-tag">${ys}</div>
-      <span class="religion-badge" style="background:${col}22;color:${col};border:1px solid ${col}55">${e.religion}</span>
-      <div class="title">${e.title}</div>
-      <div class="desc">${e.desc.slice(0,110)}…</div>
-      <div class="source">📖 ${e.source.slice(0,80)}…</div>
-    </div>`;
-  }).join("");
-  panel.querySelectorAll(".event-card").forEach(c=>{
-    c.addEventListener("click",()=>{ const ev=EVENTS.find(e=>e.id===+c.dataset.id); if(ev) selectEvent(ev); });
-  });
-}
-
-function selectEvent(d){
-  activeEvent=d;
-  const [lng,lat]=d.coords, rot=projection.rotate();
-  d3.transition().duration(900).tween("rotate",()=>{
-    const r=d3.interpolate(rot,[-lng,-lat+10]);
-    return t=>{ projection.rotate(r(t)); updatePaths(); };
-  }).on("end",renderMarkers);
-  showDetail(d);
-}
-
-function showDetail(d){
-  const panel=document.getElementById("info-panel");
-  const col=getColor(d.religion);
-  const ys=d.year<0?`${Math.abs(d.year)} BCE`:`CE ${d.year}`;
-  panel.innerHTML=`
-    <div style="margin-bottom:10px">
-      <button id="back-btn" style="background:none;border:1px solid rgba(160,120,60,.4);color:#c8a03c;
-        padding:4px 12px;border-radius:4px;cursor:pointer;font-size:.68rem;font-family:inherit">← Back to list</button>
-    </div>
-    <div class="event-card active">
-      <div class="year-tag" style="font-size:.78rem">${ys}</div>
-      <span class="religion-badge" style="background:${col}22;color:${col};border:1px solid ${col}55;font-size:.66rem">
-        ${d.religion} · ${RELIGIONS[d.religion]?.label||''}
-      </span>
-      <div class="title" style="font-size:.93rem;margin:7px 0">${d.title}</div>
-      <div class="desc" style="font-size:.74rem;color:#c0b090;line-height:1.85;white-space:pre-line">${d.desc}</div>
-      <div class="source" style="font-size:.65rem">📖 ${d.source}</div>
-    </div>`;
-  document.getElementById("back-btn").addEventListener("click",()=>{
-    activeEvent=null;
-    updatePanel(EVENTS.filter(e=>e.year<=currentYear&&(!activeFilter||e.religion===activeFilter)));
-  });
-}
-
-const tip=document.getElementById("tooltip");
-function showTip(ev,d){
-  const ys=d.year<0?`${Math.abs(d.year)} BCE`:`CE ${d.year}`;
-  tip.innerHTML=`<strong>${d.title}</strong><br><span style="color:#9a8a6a">${ys} · ${d.religion}</span>`;
-  tip.style.display="block"; moveTip(ev);
-}
-function hideTip(){ tip.style.display="none"; }
-svg.on("mousemove",moveTip);
-function moveTip(ev){ if(tip.style.display==="none") return; tip.style.left=(ev.clientX+14)+"px"; tip.style.top=(ev.clientY-10)+"px"; }
-
-let ds=null;
-svg.call(d3.drag()
-  .on("start",ev=>{ ds={x:ev.x,y:ev.y,rot:projection.rotate().slice()}; autoRotate=false; })
-  .on("drag",ev=>{
-    if(!ds) return;
-    projection.rotate([ds.rot[0]+(ev.x-ds.x)*.25, ds.rot[1]-(ev.y-ds.y)*.25]);
-    updatePaths(); renderMarkers();
-  })
-  .on("end",()=>{ setTimeout(()=>autoRotate=true,3000); })
-);
-svg.call(d3.zoom().scaleExtent([.5,3]).on("zoom",ev=>{
-  const s=ev.transform.k*R;
-  projection.scale(s); sphereEl.attr("r",s); updatePaths(); renderMarkers();
-}));
-
-function updatePaths(){
+function repaths(){
   if(!worldData) return;
-  landEl.selectAll("path").data(topojson.feature(worldData,worldData.objects.countries).features).attr("d",pathGen);
-  graticuleEl.attr("d",pathGen);
-  sphereEl.attr("cx",W/2).attr("cy",H/2);
+  land.selectAll("path").data(topojson.feature(worldData,worldData.objects.countries).features).attr("d",path);
+  grat.attr("d",path);
+  sph.attr("cx",W/2).attr("cy",H/2);
 }
 
-let autoRotate=true;
-d3.timer(()=>{ if(!autoRotate) return; const r=projection.rotate(); projection.rotate([r[0]+.1,r[1]]); updatePaths(); renderMarkers(); });
-
-const slider=document.getElementById("timeline-slider");
-slider.addEventListener("input",function(){
-  currentYear=+this.value;
-  const pct=((currentYear-+this.min)/(+this.max-+this.min)*100).toFixed(1);
-  this.style.setProperty("--pct",pct+"%");
-  document.getElementById("year-display").textContent=
-    currentYear===1900?"All eras displayed":currentYear<0?`Before ${Math.abs(currentYear)} BCE`:`Before CE ${currentYear}`;
-  renderMarkers();
-});
-
-const legendEl=document.getElementById("legend");
-Object.entries(RELIGIONS).forEach(([key,val])=>{
-  const item=document.createElement("div"); item.className="legend-item";
-  item.innerHTML=`<div class="legend-dot" style="background:${val.color}"></div><span>${val.label}</span>`;
-  item.addEventListener("click",()=>{
-    if(activeFilter===key){ activeFilter=null; document.querySelectorAll(".legend-item").forEach(i=>i.classList.remove("dimmed")); }
-    else { activeFilter=key; document.querySelectorAll(".legend-item").forEach(i=>i.classList.add("dimmed")); item.classList.remove("dimmed"); }
-    renderMarkers();
+function listPanel(evts){
+  var pan=document.getElementById("info-panel");
+  if(!evts.length){pan.innerHTML='<div class="placeholder">No records in this time range.</div>';return;}
+  var sorted=evts.slice().sort(function(a,b){return a.year-b.year;});
+  pan.innerHTML=sorted.map(function(e){
+    var c=col(e.religion);
+    var ys=e.year<0?(Math.abs(e.year)+" BCE"):("CE "+e.year);
+    var ac=selEv&&selEv.id===e.id?" active":"";
+    return '<div class="ecard'+ac+'" data-id="'+e.id+'">'
+      +'<div class="yr">'+ys+'</div>'
+      +'<span class="rbadge" style="background:'+c+'22;color:'+c+';border:1px solid '+c+'55">'+e.religion+'</span>'
+      +'<div class="ttl">'+e.title+'</div>'
+      +'<div class="dsc">'+e.desc.slice(0,110)+'...</div>'
+      +'<div class="src">📖 '+e.source.slice(0,78)+'...</div>'
+      +'</div>';
+  }).join("");
+  pan.querySelectorAll(".ecard").forEach(function(c){
+    c.addEventListener("click",function(){
+      var e=EVENTS.filter(function(x){return x.id===+c.dataset.id;})[0];
+      if(e) pick(e);
+    });
   });
-  legendEl.appendChild(item);
+}
+
+function detailPanel(d){
+  var pan=document.getElementById("info-panel");
+  var c=col(d.religion);
+  var ys=d.year<0?(Math.abs(d.year)+" BCE"):("CE "+d.year);
+  pan.innerHTML='<div style="margin-bottom:10px">'
+    +'<button id="bk" style="background:none;border:1px solid rgba(160,120,60,.4);color:#c8a03c;padding:3px 11px;border-radius:4px;cursor:pointer;font-size:.68rem;font-family:inherit">&larr; Back to list</button>'
+    +'</div>'
+    +'<div class="ecard active">'
+    +'<div class="yr" style="font-size:.78rem">'+ys+'</div>'
+    +'<span class="rbadge" style="background:'+c+'22;color:'+c+';border:1px solid '+c+'55;font-size:.67rem">'+d.religion+'</span>'
+    +'<div class="ttl" style="font-size:.93rem;margin:7px 0">'+d.title+'</div>'
+    +'<div class="dsc" style="font-size:.74rem;color:#c0b090;line-height:1.85;white-space:pre-line">'+d.desc+'</div>'
+    +'<div class="src" style="font-size:.65rem">📖 '+d.source+'</div>'
+    +'</div>';
+  document.getElementById("bk").addEventListener("click",function(){
+    selEv=null;
+    listPanel(EVENTS.filter(function(e){return e.year<=curYear&&(!filt||e.religion===filt);}));
+  });
+}
+
+function pick(d){
+  selEv=d;
+  var rot=proj.rotate();
+  d3.transition().duration(900).tween("r",function(){
+    var interp=d3.interpolate(rot,[-d.coords[0],-d.coords[1]+10]);
+    return function(t){proj.rotate(interp(t));repaths();};
+  }).on("end",render);
+  detailPanel(d);
+}
+
+var tip=document.getElementById("tip");
+function tipShow(ev,d){
+  var ys=d.year<0?(Math.abs(d.year)+" BCE"):("CE "+d.year);
+  tip.innerHTML="<strong>"+d.title+"</strong><br><span style='color:#9a8a6a'>"+ys+" \u00b7 "+d.religion+"</span>";
+  tip.style.display="block";tipMove(ev);
+}
+function tipHide(){tip.style.display="none";}
+function tipMove(ev){if(tip.style.display==="none")return;tip.style.left=(ev.clientX+14)+"px";tip.style.top=(ev.clientY-10)+"px";}
+svg.on("mousemove",tipMove);
+
+var dg=null;
+svg.call(d3.drag()
+  .on("start",function(ev){dg={x:ev.x,y:ev.y,r:proj.rotate().slice()};autoRot=false;})
+  .on("drag", function(ev){if(!dg)return;proj.rotate([dg.r[0]+(ev.x-dg.x)*.25,dg.r[1]-(ev.y-dg.y)*.25]);repaths();render();})
+  .on("end",  function(){setTimeout(function(){autoRot=true;},3000);})
+);
+svg.call(d3.zoom().scaleExtent([.5,3]).on("zoom",function(ev){var s=ev.transform.k*R;proj.scale(s);sph.attr("r",s);repaths();render();}));
+
+d3.timer(function(){if(!autoRot)return;var r=proj.rotate();proj.rotate([r[0]+.1,r[1]]);repaths();render();});
+
+var tsl=document.getElementById("tslider");
+var yd=document.getElementById("yd");
+function updateSlider(v){
+  var pct=((v-(-3000))/(1900-(-3000))*100).toFixed(1);
+  tsl.style.setProperty("--p",pct+"%");
+  if(v>=1900){yd.textContent="All eras displayed";}
+  else if(v<0){yd.textContent="Before "+Math.abs(v)+" BCE";}
+  else{yd.textContent="Before CE "+v;}
+}
+tsl.addEventListener("input",function(){curYear=+this.value;updateSlider(curYear);render();});
+updateSlider(1900);
+
+var leg=document.getElementById("legend");
+Object.keys(RELIGIONS).forEach(function(k){
+  var v=RELIGIONS[k];
+  var it=document.createElement("div"); it.className="litm";
+  it.innerHTML='<div class="ldot" style="background:'+v.color+'"></div><span>'+v.label+'</span>';
+  it.addEventListener("click",function(){
+    if(filt===k){filt=null;document.querySelectorAll(".litm").forEach(function(x){x.classList.remove("dim");});}
+    else{filt=k;document.querySelectorAll(".litm").forEach(function(x){x.classList.add("dim");});it.classList.remove("dim");}
+    render();
+  });
+  leg.appendChild(it);
 });
 
-window.addEventListener("resize",()=>{
-  W=container.clientWidth; H=container.clientHeight; R=Math.min(W,H)*.42;
+window.addEventListener("resize",function(){
+  W=ctr.clientWidth;H=ctr.clientHeight;R=Math.min(W,H)*.42;
   svg.attr("width",W).attr("height",H);
-  projection.translate([W/2,H/2]).scale(R);
-  sphereEl.attr("cx",W/2).attr("cy",H/2).attr("r",R);
-  updatePaths(); renderMarkers();
+  proj.translate([W/2,H/2]).scale(R);
+  sph.attr("cx",W/2).attr("cy",H/2).attr("r",R);
+  repaths();render();
 });
 </script>
 </body>
