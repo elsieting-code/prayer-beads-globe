@@ -308,7 +308,7 @@ const yd=document.getElementById("yd");
 function updateSlider(v){
   const pct=((v-(-3000))/(1900-(-3000))*100).toFixed(1);
   tsl.style.setProperty("--p",pct+"%");
-  yd.textContent=v>=1900?"顯示所有年代":v<0?`西元前 ${Math.abs(v)} 年以前`:`西元 ${v} 年以前`;
+  yd.textContent=v>=1900?"顯示所有年代":v<0?`西元前 ${Math.abs(v)} 年`:`西元 ${v} 年`;
 }
 tsl.addEventListener("input",function(){curYear=+this.value;updateSlider(curYear);render();});
 updateSlider(1900);
